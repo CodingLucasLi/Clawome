@@ -1,0 +1,240 @@
+.benchmark-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.benchmark-page h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #151010;
+  margin-bottom: 8px;
+}
+
+.benchmark-desc {
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+  max-width: 720px;
+}
+
+/* Override benchmark table for full-page display */
+.benchmark-page .benchmark-table-wrap {
+  margin-bottom: 40px;
+}
+
+.benchmark-page .benchmark-table {
+  font-size: 13px;
+}
+
+.benchmark-page .benchmark-table th,
+.benchmark-page .benchmark-table td {
+  padding: 10px 14px;
+}
+
+/* Notes section */
+.benchmark-notes {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 24px 28px;
+  background: #f8fafc;
+}
+
+.benchmark-notes h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 12px;
+}
+
+.benchmark-notes h3:not(:first-child) {
+  margin-top: 24px;
+}
+
+.benchmark-notes ul {
+  margin: 0 0 4px;
+  padding-left: 20px;
+}
+
+.benchmark-notes li {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+.benchmark-notes strong {
+  color: #334155;
+  font-weight: 600;
+}
+
+.benchmark-rating-desc {
+  font-size: 14px;
+  color: #475569;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.benchmark-notes code {
+  font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
+  font-size: 12px;
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #E8663C;
+}
+
+/* Benchmark count badge */
+.benchmark-count {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* Page link */
+.bench-page a {
+  color: #E8663C;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.bench-page a:hover {
+  text-decoration: underline;
+  color: #c9592e;
+}
+
+.bench-row-disabled .bench-page a {
+  color: #94a3b8;
+}
+
+/* ── Result columns (After Compressed / Token Saving / Completeness) ── */
+.bench-result-th {
+  background: #ecfdf5 !important;
+  color: #166534 !important;
+}
+
+.bench-result-cell {
+  background: #f0fdf4;
+}
+
+.benchmark-table tr:hover .bench-result-cell {
+  background: #ecfdf5;
+}
+
+/* Note column */
+.bench-note {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+  max-width: 160px;
+}
+
+/* Agent Friendly stars */
+.bench-stars {
+  font-size: 14px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  color: #E8663C;
+}
+
+.bench-stars-cell {
+  text-align: center;
+}
+
+/* Disabled row (captcha / N/A) */
+.bench-row-disabled td {
+  color: #cbd5e1;
+}
+
+.bench-row-disabled .bench-page {
+  color: #94a3b8;
+}
+
+.bench-row-disabled .bench-stars {
+  color: #cbd5e1;
+}
+
+.bench-row-disabled .bench-note {
+  color: #ef4444;
+  font-style: normal;
+  font-weight: 500;
+}
+
+/* Run button */
+.bench-action {
+  text-align: center;
+  width: 44px;
+}
+
+.bench-run-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 8px;
+  color: #E8663C;
+  transition: all 0.15s;
+}
+
+.bench-run-btn:hover:not(:disabled) {
+  background: #E8663C;
+  color: white;
+  border-color: #E8663C;
+}
+
+.bench-run-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Custom URL input */
+.bench-custom {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.bench-custom-input {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #334155;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.bench-custom-input:focus {
+  border-color: #E8663C;
+}
+
+.bench-custom-input::placeholder {
+  color: #94a3b8;
+}
+
+.bench-custom-btn {
+  padding: 6px 16px;
+  background: #E8663C;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.bench-custom-btn:hover:not(:disabled) {
+  background: #c9592e;
+}
+
+.bench-custom-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

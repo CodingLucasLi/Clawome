@@ -1,0 +1,69 @@
+{
+  "icon_class_prefixes": [
+    "fa", "fas", "far", "fab", "fal", "fad",
+    "bi", "icon", "anticon", "glyphicon",
+    "mdi", "ri", "el-icon", "lucide", "heroicon"
+  ],
+  "material_icon_classes": [
+    "material-icons",
+    "material-icons-outlined",
+    "material-icons-round",
+    "material-icons-sharp",
+    "material-icons-two-tone",
+    "material-symbols-outlined",
+    "material-symbols-rounded",
+    "material-symbols-sharp"
+  ],
+  "semantic_keywords": [
+    "search", "login", "logout", "signin", "signout",
+    "signup", "register",
+    "cart", "checkout", "payment",
+    "subscribe", "unsubscribe",
+    "contact", "comment", "reply", "send", "message",
+    "share", "repost", "forward",
+    "download", "upload", "export", "import",
+    "filter", "sort", "reset",
+    "close", "cancel", "dismiss",
+    "delete", "remove", "trash",
+    "edit", "modify", "rename",
+    "save", "submit", "confirm", "apply",
+    "add", "create", "new",
+    "copy", "paste", "duplicate",
+    "undo", "redo",
+    "prev", "next", "back", "forward",
+    "expand", "collapse", "toggle",
+    "menu", "sidebar", "drawer", "dropdown",
+    "play", "pause", "stop", "mute", "unmute", "volume",
+    "fullscreen", "minimize", "maximize",
+    "like", "dislike", "favorite", "bookmark", "star",
+    "follow", "unfollow",
+    "print", "refresh", "reload", "sync",
+    "settings", "config", "preferences", "options",
+    "help", "info", "warning", "error",
+    "notification", "bell", "alert",
+    "profile", "avatar", "account", "user",
+    "home", "dashboard",
+    "calendar", "date", "time",
+    "location", "map", "pin",
+    "phone", "call", "email", "mail",
+    "camera", "photo", "image", "gallery",
+    "file", "folder", "document", "attach",
+    "link", "unlink", "external",
+    "lock", "unlock", "password", "key",
+    "eye", "visible", "hidden", "show", "hide",
+    "zoom-in", "zoom-out", "magnify",
+    "theme", "dark-mode", "light-mode",
+    "language", "translate", "globe"
+  ],
+  "carousel_clone_selectors": [
+    ".swiper-slide-duplicate",
+    ".slick-cloned",
+    ".owl-item.cloned",
+    ".flickity-slider > .is-selected ~ .is-duplicate"
+  ],
+  "switchable_state_classes": [
+    "active", "current", "show", "showing", "on", "selected", "open",
+    "visible", "hide", "hidden", "fade", "in", "out",
+    "collapsed", "expanded", "collapsing"
+  ]
+}
