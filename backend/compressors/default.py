@@ -74,6 +74,7 @@ def _tree_to_flat(roots):
                 "xpath": node.get("xpath", ""),
                 "actions": node.get("actions", []),
                 "label": node.get("label", ""),
+                "formLabel": node.get("formLabel", ""),
                 "state": node.get("state", {}),
                 "inlined": node.get("inlined", False),
             })

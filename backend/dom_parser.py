@@ -417,7 +417,10 @@ def format_dom_tree(nodes: list[dict]) -> str:
             state_str = ""
 
         text = f": {n['text']}" if n["text"] else ""
-        lines.append(f"{indent}[{n['hid']}] {tag}{attrs}{action_str}{state_str}{text}")
+        # Show form label association for inputs
+        fl = n.get("formLabel", "")
+        form_label_str = f" «{fl}»" if fl else ""
+        lines.append(f"{indent}[{n['hid']}] {tag}{attrs}{action_str}{state_str}{form_label_str}{text}")
     return "\n".join(lines)
 
 
@@ -489,3 +492,139 @@ def extract_dom_with_map(html: str) -> tuple[str, dict[str, str]]:
 def extract_interactive_dom(html: str) -> list[dict]:
     """HTML → filtered interactive node list."""
     return extract_unified_dom(html)["interactive"]
+
+
+# ---------------------------------------------------------------------------
+# DOM diff — compare before/after snapshots
+# ---------------------------------------------------------------------------
+
+def diff_dom(before_nodes: list[dict], after_nodes: list[dict],
+             max_items: int = 20) -> dict:
+    """Compare two filtered-node snapshots, return a change summary.
+
+    Uses *selector* (``[data-bid="N"]``) as stable identity — hids shift
+    when nodes are inserted / removed, but data-bid is assigned once per
+    element and survives across walker runs as long as the element exists.
+
+    Returns::
+
+        {
+            "has_changes": bool,
+            "summary": "新增 3 个节点, 移除 1 个节点, 2 个节点内容变化",
+            "added":   [{hid, tag, label, actions}, ...],   # max *max_items*
+            "removed": [{hid, tag, label, actions}, ...],
+            "changed": [{hid, tag, label, field, before, after}, ...],
+        }
+    """
+    # Build lookup by selector (skip nodes without one — e.g. synthetic …)
+    def _build_map(nodes):
+        m = {}
+        for n in nodes:
+            sel = n.get("selector") or ""
+            if sel:
+                m[sel] = n
+        return m
+
+    bmap = _build_map(before_nodes)
+    amap = _build_map(after_nodes)
+
+    bkeys = set(bmap)
+    akeys = set(amap)
+
+    # ── Added / removed ──
+    added_keys = akeys - bkeys
+    removed_keys = bkeys - akeys
+    common_keys = bkeys & akeys
+
+    def _brief(n):
+        return {
+            "hid": n.get("hid", ""),
+            "tag": n.get("tag", ""),
+            "label": (n.get("label") or n.get("text") or "")[:120],
+            "actions": n.get("actions", []),
+        }
+
+    added_all = [_brief(amap[k]) for k in added_keys]
+    removed_all = [_brief(bmap[k]) for k in removed_keys]
+
+    # ── Changed: hid / text / state / actions ──
+    changed_all = []
+    for key in common_keys:
+        bn = bmap[key]
+        an = amap[key]
+
+        # HID change (same element, different position due to insert/delete)
+        bh = bn.get("hid", "")
+        ah = an.get("hid", "")
+        if bh != ah:
+            changed_all.append({
+                "hid": ah,
+                "tag": an.get("tag", ""),
+                "label": (an.get("label") or "")[:120],
+                "field": "hid",
+                "before": bh,
+                "after": ah,
+            })
+
+        # Text change
+        bt = (bn.get("text") or "")
+        at = (an.get("text") or "")
+        if bt != at:
+            changed_all.append({
+                "hid": an.get("hid", ""),
+                "tag": an.get("tag", ""),
+                "label": (an.get("label") or at or "")[:120],
+                "field": "text",
+                "before": bt[:80],
+                "after": at[:80],
+            })
+
+        # State change (disabled, checked, value, aria-expanded, …)
+        bs = bn.get("state") or {}
+        as_ = an.get("state") or {}
+        all_state_keys = set(bs) | set(as_)
+        for sk in all_state_keys:
+            bv = bs.get(sk)
+            av = as_.get(sk)
+            if bv != av:
+                changed_all.append({
+                    "hid": an.get("hid", ""),
+                    "tag": an.get("tag", ""),
+                    "label": (an.get("label") or "")[:120],
+                    "field": f"state.{sk}",
+                    "before": str(bv) if bv is not None else "",
+                    "after": str(av) if av is not None else "",
+                })
+
+        # Actions change
+        ba = bn.get("actions") or []
+        aa = an.get("actions") or []
+        if ba != aa:
+            changed_all.append({
+                "hid": an.get("hid", ""),
+                "tag": an.get("tag", ""),
+                "label": (an.get("label") or "")[:120],
+                "field": "actions",
+                "before": "/".join(ba),
+                "after": "/".join(aa),
+            })
+
+    # ── Summary ──
+    parts = []
+    if added_all:
+        parts.append(f"新增 {len(added_all)} 个节点")
+    if removed_all:
+        parts.append(f"移除 {len(removed_all)} 个节点")
+    if changed_all:
+        parts.append(f"{len(changed_all)} 个节点内容变化")
+    summary = ", ".join(parts) if parts else "无变化"
+
+    has_changes = bool(added_all or removed_all or changed_all)
+
+    return {
+        "has_changes": has_changes,
+        "summary": summary,
+        "added": added_all[:max_items],
+        "removed": removed_all[:max_items],
+        "changed": changed_all[:max_items],
+    }

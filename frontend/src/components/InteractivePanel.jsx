@@ -1,5 +1,8 @@
 import { useState } from 'react'
 
+// Strip ⟨⟩ markers used by the DOM walker for agent consumption
+const cleanLabel = (s) => s ? s.replace(/[⟨⟩]/g, '') : ''
+
 const TAG_COLORS = {
   a: '#8b5cf6', button: '#f59e0b', input: '#10b981', textarea: '#10b981',
   select: '#10b981', form: '#6366f1', img: '#ec4899', h1: '#0ea5e9',
@@ -30,7 +33,7 @@ export default function InteractivePanel({ nodes, isOpen, onAction }) {
           >
             <span className="inode-hid">{n.hid}</span>
             <span className="inode-tag" style={{ background: color }}>{n.tag}</span>
-            {n.label && <span className="inode-label">{n.label}</span>}
+            {n.label && <span className="inode-label">{cleanLabel(n.label)}</span>}
 
             {n.state && Object.keys(n.state).length > 0 && (
               <span className="inode-state">
