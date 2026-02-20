@@ -404,6 +404,39 @@
   border-radius: 8px 8px 0 0;
 }
 
+/* Lite / Full toggle in DOM toolbar */
+.lite-toggle {
+  display: flex;
+  gap: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #403428;
+}
+
+.lite-btn {
+  padding: 2px 10px;
+  border: none;
+  background: #201814;
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lite-btn:hover {
+  background: #30261e;
+}
+
+.lite-btn-active {
+  background: #E8663C;
+  color: #fff;
+}
+
+.lite-btn-active:hover {
+  background: #d05530;
+}
+
 .toolbar-hint {
   font-size: 11px;
   color: #94a3b8;

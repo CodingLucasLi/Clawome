@@ -91,12 +91,17 @@ def api_get_url():
 @app.route("/api/browser/dom", methods=["GET", "POST"])
 def api_get_dom():
     fields = None
+    lite = False
     if request.method == "POST":
-        fields = _body().get("fields")
-    elif request.args.get("fields"):
-        fields = request.args.get("fields").split(",")
+        body = _body()
+        fields = body.get("fields")
+        lite = bool(body.get("lite", False))
+    else:
+        if request.args.get("fields"):
+            fields = request.args.get("fields").split(",")
+        lite = request.args.get("lite", "").lower() in ("1", "true", "yes")
     try:
-        return jsonify(manager.get_dom(fields=fields))
+        return jsonify(manager.get_dom(fields=fields, lite=lite))
     except Exception as e:
         return _err(str(e))
 

@@ -57,7 +57,8 @@ class BrowserManager:
         self._lock = threading.Lock()
         self._node_map: dict[str, str] = {}   # hid → css selector
         self._xpath_map: dict[str, str] = {}  # hid → xpath expression
-        self._last_filtered: list[dict] = []  # cached filtered nodes for DOM diff
+        self._last_filtered: list[dict] = []  # cached interactive nodes for DOM diff
+        self._last_result: dict = {}            # cached full result for lite re-assembly
         self._download_dir = tempfile.mkdtemp()
         self._downloads: list[str] = []
         self._new_pages: list = []
@@ -296,6 +297,8 @@ class BrowserManager:
         self._xpath_map = result["xpath_map"]
         # Cache interactive nodes for DOM diff (before/after comparison)
         self._last_filtered = result["interactive"]
+        # Cache full result for lite-mode re-assembly
+        self._last_result = result
         return result
 
     def _is_mac(self) -> bool:
@@ -543,16 +546,34 @@ class BrowserManager:
     # 6-11  DOM Reading
     # ==================================================================
 
-    def get_dom(self, fields=None):                                  # 6
-        """Unified DOM endpoint with optional field selection.
+    def get_dom(self, fields=None, lite=False):                       # 6
+        """Unified DOM endpoint with optional field selection and lite mode.
 
         *fields*: list of field names to include.  Accepted values:
             "dom", "interactive", "xpath_map", "stats"
         If omitted or empty, all fields are returned (backward-compatible).
+
+        *lite*: when True, walk the DOM normally then re-assemble with
+        truncated text.  The walk is the same as ``/dom`` — lite only
+        affects the final formatting step, guaranteeing identical node IDs.
         """
         with self._lock:
             self._ensure_open()
             dom_result = self._refresh_dom()
+
+            # Lite mode: re-assemble the same walk result with truncation
+            if lite and "_filtered_nodes" in dom_result:
+                from dom_parser import assemble_result
+                text_max = cfg.get("lite_text_max") or 50
+                text_head = cfg.get("lite_text_head") or 30
+                dom_result = assemble_result(
+                    dom_result["_dom_nodes"],
+                    dom_result["_filtered_nodes"],
+                    dom_result["_html_len"],
+                    text_max_len=text_max,
+                    text_head_len=text_head,
+                )
+
             if not fields:
                 return {
                     "status": "ok",
@@ -933,6 +954,7 @@ class BrowserManager:
             self._node_map = {}
             self._xpath_map = {}
             self._last_filtered = []
+            self._last_result = {}
             self._downloads = []
             self._new_pages = []
             return {"status": "ok", "message": "Browser closed"}
@@ -1230,4 +1252,5 @@ class BrowserManager:
         self._node_map = {}
         self._xpath_map = {}
         self._last_filtered = []
+        self._last_result = {}
         self._new_pages = []

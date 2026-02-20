@@ -59,6 +59,7 @@ Read page → Decide → Act → Read again. When finished:
 
   Open a page                POST /browser/open {"url":"..."}
   Read the page              GET  /browser/dom
+  Read the page (lite)       GET  /browser/dom?lite=true
   Click something            POST /browser/click {"node_id":"..."}
   Type into a field          POST /browser/input {"node_id":"...","text":"..."}
   Fill a field (fast)        POST /browser/fill {"node_id":"...","text":"..."}
@@ -74,6 +75,7 @@ Read page → Decide → Act → Read again. When finished:
 ## Key Concepts
 
 - Compressed DOM — Raw pages have thousands of noisy HTML tags. Clawome filters them down to only visible, interactive elements, saving 80-90% tokens.
+- Lite mode — `GET /dom?lite=true` further reduces tokens by truncating long text. Node IDs stay identical — use `POST /text` to fetch full text for any node when needed.
 - node_id — Hierarchical IDs like "1", "1.2", "3.1.4". Target any element precisely — no CSS selectors, no guessing.
 - Auto-refresh — Every action (click, type, scroll) returns the updated DOM. You always have the latest state without extra calls.
 - DOM diff — Click, input, and fill actions return a `dom_changes` object showing what nodes were added, removed, or changed — no need to diff the DOM yourself.

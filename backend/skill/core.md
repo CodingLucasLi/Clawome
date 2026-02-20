@@ -117,6 +117,22 @@ curl {{BASE_URL}}/api/browser/url
 
 Get the compressed DOM tree as text. **You MUST call this first before using any `node_id` in other endpoints** — it populates the internal node map.
 
+**Parameters (query or body):**
+- `lite` (boolean, optional) — When `true`, truncate long text to save tokens. Node IDs, visibility, and clickability are identical to the full output. Default: `false`.
+- `fields` (string/list, optional) — Comma-separated field names to include: `dom`, `interactive`, `xpath_map`, `stats`. If omitted, all fields are returned.
+
+**Examples:**
+```bash
+# Full DOM
+GET /dom
+
+# Lite mode (truncated text, fewer tokens)
+GET /dom?lite=true
+
+# POST with lite + field selection
+POST /dom  {"lite": true, "fields": ["dom", "stats"]}
+```
+
 **Response:**
 ```json
 {
@@ -124,6 +140,13 @@ Get the compressed DOM tree as text. **You MUST call this first before using any
   "dom": "[1] form(role=\"search\")\n  [1.1] textarea(name=\"q\", placeholder=\"Search\")\n  [1.2] button: Google Search"
 }
 ```
+
+**Lite mode output example:**
+```
+[3.1] p: This is the beginning of a lo…(380 chars omitted)
+[3.2] a(href) [click]: Read more
+```
+Text of non-interactive nodes is truncated to `first N chars…(X chars omitted)`. Interactive elements (buttons, links, inputs) keep full text. Use `POST /text {"node_id":"3.1"}` to retrieve full text when needed.
 
 **DOM format:**
 - Each line: `[node_id] tag(key_attributes): text_content`

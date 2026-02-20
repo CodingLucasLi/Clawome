@@ -32,6 +32,13 @@ const SECTION_GROUPS = {
       ],
     },
     {
+      title: 'DOM Lite Mode',
+      items: [
+        { key: 'lite_text_max', label: 'Truncate Threshold', unit: 'chars', desc: 'Text longer than this is truncated in lite mode (0 = no truncation)' },
+        { key: 'lite_text_head', label: 'Keep Head Length', unit: 'chars', desc: 'Number of leading characters kept before the …(X chars omitted) marker' },
+      ],
+    },
+    {
       title: 'Keyboard & Scroll',
       items: [
         { key: 'type_delay', label: 'Type Delay', unit: 'ms', desc: 'Delay between keystrokes when typing' },
