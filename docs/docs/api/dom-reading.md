@@ -12,6 +12,29 @@ Get the filtered DOM tree as a concise text representation. This also populates 
 
 ```
 GET /api/browser/dom
+POST /api/browser/dom
+```
+
+**Parameters (query string or JSON body):**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `lite` | boolean | `false` | Truncate long text to save tokens. Node IDs, visibility, and clickability stay identical. |
+| `fields` | string/list | all | Comma-separated fields to include: `dom`, `interactive`, `xpath_map`, `stats`. |
+
+**Examples:**
+
+```bash
+# Full DOM
+curl http://localhost:5000/api/browser/dom
+
+# Lite mode — truncated text, fewer tokens
+curl http://localhost:5000/api/browser/dom?lite=true
+
+# POST with lite + field selection
+curl -X POST http://localhost:5000/api/browser/dom \
+  -H "Content-Type: application/json" \
+  -d '{"lite": true, "fields": ["dom", "stats"]}'
 ```
 
 **Response:**
@@ -23,10 +46,19 @@ GET /api/browser/dom
 }
 ```
 
+**Lite mode output example:**
+
+```
+[3.1] p: This is the beginning of a lo…(380 chars omitted)
+[3.2] a(href) [click]: Read more
+```
+
+In lite mode, text of non-interactive nodes (paragraphs, headings, etc.) is truncated to `first N chars…(X chars omitted)`. Interactive elements (buttons, links, inputs) keep full text. Use `POST /text {"node_id":"3.1"}` to retrieve full text for any node.
+
 The DOM tree uses hierarchical numbering (`1`, `1.1`, `1.2`, `2.3.1`) and includes:
 - Tag name
 - Relevant attributes (role, aria-label, type, name, placeholder, etc.)
-- Text content (truncated to 120 chars)
+- Text content (truncated to 120 chars; further truncated in lite mode)
 - URLs marked as flags (e.g., `href` without the actual URL)
 
 ---

@@ -25,6 +25,9 @@ export default function ViewerPage() {
   const activePageIdRef = useRef(null)
   const [domLoading, setDomLoading] = useState(false)
   const [copiedKey, setCopiedKey] = useState(null)
+  const [liteMode, setLiteMode] = useState(false)         // lite DOM toggle
+  const [liteDomCache, setLiteDomCache] = useState({})    // pageId → {domTree, interactiveNodes, domStats}
+  const [liteFetching, setLiteFetching] = useState(false)
   const [apiResult, setApiResult] = useState(null)        // last action API response
   const [screenshotLoaded, setScreenshotLoaded] = useState(false)
   const screenshotRef = useRef(null)
@@ -38,7 +41,9 @@ export default function ViewerPage() {
     setTimeout(() => setCopiedKey(null), 1500)
   }
 
-  const activeDom = tabDomCache[activePageId] || {}
+  const fullDom = tabDomCache[activePageId] || {}
+  const liteDom = liteDomCache[activePageId] || {}
+  const activeDom = liteMode ? liteDom : fullDom
   const domTree = activeDom.domTree || ''
   const interactiveNodes = activeDom.interactiveNodes || []
   const domStats = activeDom.domStats || null
@@ -84,6 +89,27 @@ export default function ViewerPage() {
     }
   }
 
+  const fetchLiteDom = async () => {
+    setLiteFetching(true)
+    try {
+      const resp = await getDomTree(true)
+      if (resp.status === 200 && resp.data) {
+        const pid = activePageIdRef.current
+        if (pid) {
+          setLiteDomCache(prev => ({
+            ...prev,
+            [pid]: {
+              domTree: resp.data.dom || '',
+              interactiveNodes: resp.data.interactive || [],
+              domStats: resp.data.stats || null,
+            }
+          }))
+        }
+      }
+    } catch { /* keep cached */ }
+    setLiteFetching(false)
+  }
+
   const fetchRightPanel = async () => {
     await Promise.all([fetchUnifiedDom(), fetchSource()])
   }
@@ -92,7 +118,15 @@ export default function ViewerPage() {
     setDomLoading(true)
     try {
       await fetchBrowserTabs()
+      setLiteDomCache(prev => {
+        const pid = activePageIdRef.current
+        if (!pid) return prev
+        const next = { ...prev }
+        delete next[pid]
+        return next
+      })
       await fetchRightPanel()
+      if (liteMode) await fetchLiteDom()
     } catch {}
     setDomLoading(false)
   }
@@ -215,6 +249,7 @@ export default function ViewerPage() {
       clearInterval(panelInterval.current)
       setPageSource('')
       setTabDomCache({})
+      setLiteDomCache({})
       setActivePageId(null)
       setScreenshotLoaded(false)
     }
@@ -249,6 +284,7 @@ export default function ViewerPage() {
       setMessage(data.message)
       setPageSource('')
       setTabDomCache({})
+      setLiteDomCache({})
       setActivePageId(null)
       setBrowserTabs([])
       setActiveTabId(null)
@@ -439,7 +475,21 @@ export default function ViewerPage() {
             ) : (
               <>
                 <div className="code-toolbar">
-                  {activeTab === 'dom' && <span className="toolbar-hint">For Agent to Read</span>}
+                  {activeTab === 'dom' && (
+                    <div className="lite-toggle">
+                      <button
+                        className={`lite-btn ${!liteMode ? 'lite-btn-active' : ''}`}
+                        onClick={() => setLiteMode(false)}
+                      >Full</button>
+                      <button
+                        className={`lite-btn ${liteMode ? 'lite-btn-active' : ''}`}
+                        onClick={() => {
+                          setLiteMode(true)
+                          fetchLiteDom()
+                        }}
+                      >Lite{liteFetching ? '…' : ''}</button>
+                    </div>
+                  )}
                   <button
                     className={`copy-btn${copiedKey === 'code' ? ' copied' : ''}`}
                     onClick={() => {

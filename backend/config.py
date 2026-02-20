@@ -111,6 +111,10 @@ DEFAULTS = {
         "collapsed", "expanded", "collapsing",
     ],
 
+    # DOM Lite (text truncation for /dom?lite=true)
+    "lite_text_max": 50,        # truncate text longer than this (0 = no truncation)
+    "lite_text_head": 30,       # keep first N chars before …(X chars omitted)
+
     # Browser
     "headless": False,
 

@@ -389,9 +389,21 @@ def parse_dom(html: str) -> list[dict]:
 # Output formatting (shared by all compressors)
 # ---------------------------------------------------------------------------
 
-def format_dom_tree(nodes: list[dict]) -> str:
+def _truncate_text(text: str, max_len: int, head_len: int) -> str:
+    """Truncate text to head_len chars + omission notice."""
+    if not text or max_len <= 0 or len(text) <= max_len:
+        return text
+    omitted = len(text) - head_len
+    return f"{text[:head_len]}…({omitted} chars omitted)"
+
+
+def format_dom_tree(nodes: list[dict], text_max_len: int = 0,
+                    text_head_len: int = 0) -> str:
     """Format filtered nodes into rich markdown tree.
     Pattern: [hid] tag(attrs) [actions] {state}: text
+
+    When *text_max_len* > 0, truncate text of non-interactive nodes
+    (nodes without actions) to save tokens.
     """
     lines = []
     for n in nodes:
@@ -416,7 +428,11 @@ def format_dom_tree(nodes: list[dict]) -> str:
         else:
             state_str = ""
 
-        text = f": {n['text']}" if n["text"] else ""
+        raw_text = n["text"]
+        # Lite mode: truncate non-interactive node text
+        if text_max_len > 0 and not actions:
+            raw_text = _truncate_text(raw_text, text_max_len, text_head_len)
+        text = f": {raw_text}" if raw_text else ""
         # Show form label association for inputs
         fl = n.get("formLabel", "")
         form_label_str = f" «{fl}»" if fl else ""
@@ -425,13 +441,24 @@ def format_dom_tree(nodes: list[dict]) -> str:
 
 
 def assemble_result(dom_nodes: list[dict], filtered_nodes: list[dict],
-                    html_len: int = 0) -> dict:
+                    html_len: int = 0, text_max_len: int = 0,
+                    text_head_len: int = 0) -> dict:
     """Assemble the standard unified result dict from filtered nodes.
 
     This is the fixed output layer — all compressors produce filtered nodes,
     and this function wraps them into the standard response format.
+
+    When *text_max_len* > 0, text is truncated in the tree output and
+    interactive[].label for non-interactive nodes (lite mode).
     """
-    tree = format_dom_tree(filtered_nodes)
+    tree = format_dom_tree(filtered_nodes, text_max_len=text_max_len,
+                           text_head_len=text_head_len)
+
+    def _label(n):
+        label = n["label"] or n["text"]
+        if text_max_len > 0 and not n.get("actions"):
+            label = _truncate_text(label, text_max_len, text_head_len)
+        return label
 
     return {
         "tree": tree,
@@ -442,7 +469,7 @@ def assemble_result(dom_nodes: list[dict], filtered_nodes: list[dict],
                 "hid": n["hid"],
                 "depth": n["depth"],
                 "tag": n["tag"],
-                "label": n["label"] or n["text"],
+                "label": _label(n),
                 "selector": n["selector"],
                 "xpath": n["xpath"],
                 "actions": n["actions"],
@@ -459,6 +486,10 @@ def assemble_result(dom_nodes: list[dict], filtered_nodes: list[dict],
             "nodes_before_filter": len(dom_nodes),
             "nodes_after_filter": len(filtered_nodes),
         },
+        # Internal: cached for lite-mode re-assembly (not serialized to API)
+        "_filtered_nodes": filtered_nodes,
+        "_dom_nodes": dom_nodes,
+        "_html_len": html_len,
     }
 
 # ---------------------------------------------------------------------------

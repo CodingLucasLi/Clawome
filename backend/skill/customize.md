@@ -149,6 +149,8 @@ All runtime settings can be read and updated via the config API. Changes are per
 | `gray_text_min_rgb` | int | 150 | Min R/G/B value to detect fake placeholder (gray text) |
 | `gray_text_max_diff` | int | 20 | Max diff between R/G/B channels for gray detection |
 | `icon_max_size` | int | 80 | Max width/height (px) for icon container detection |
+| `lite_text_max` | int | 50 | Lite mode: truncate text longer than this (chars) |
+| `lite_text_head` | int | 30 | Lite mode: keep first N chars before `…(X chars omitted)` |
 | `headless` | bool | false | Run browser in headless mode |
 | `compressor_rules` | list | [] | Platform-level URL → compressor mapping rules |
 

@@ -220,8 +220,8 @@ export function getStatus() {
   return api.get('/browser/status')
 }
 
-export function getDomTree() {
-  return api.get('/browser/dom')
+export function getDomTree(lite = false) {
+  return api.get('/browser/dom', { params: lite ? { lite: true } : {} })
 }
 
 export function getInteractiveDom() {
