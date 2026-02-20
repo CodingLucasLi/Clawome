@@ -14,9 +14,15 @@ import threading
 from playwright.sync_api import sync_playwright
 import config as cfg
 
-_HINTS_PATH = os.path.join(os.path.dirname(__file__), "semantic_hints.json")
-with open(_HINTS_PATH, encoding="utf-8") as _f:
-    _HINTS = json.load(_f)
+def _get_hints():
+    """Read icon/carousel/state hints from config (runtime-updatable)."""
+    return {
+        "icon_class_prefixes": cfg.get("icon_class_prefixes"),
+        "material_icon_classes": cfg.get("material_icon_classes"),
+        "semantic_keywords": cfg.get("semantic_keywords"),
+        "carousel_clone_selectors": cfg.get("carousel_clone_selectors"),
+        "switchable_state_classes": cfg.get("switchable_state_classes"),
+    }
 
 _JS_WALKER_PATH = os.path.join(os.path.dirname(__file__), "dom_walker.js")
 _JS_WALKER_MTIME = 0.0
@@ -51,6 +57,7 @@ class BrowserManager:
         self._lock = threading.Lock()
         self._node_map: dict[str, str] = {}   # hid → css selector
         self._xpath_map: dict[str, str] = {}  # hid → xpath expression
+        self._last_filtered: list[dict] = []  # cached filtered nodes for DOM diff
         self._download_dir = tempfile.mkdtemp()
         self._downloads: list[str] = []
         self._new_pages: list = []
@@ -74,12 +81,13 @@ class BrowserManager:
         return sel
 
     def _inject_selectors(self):
-        """Inject data-bid, data-bhidden (visibility/clones), data-bicon (icons), data-bgroup (switchable panels)."""
-        icon_prefixes = _HINTS["icon_class_prefixes"]
-        material_classes = _HINTS["material_icon_classes"]
-        semantic_kw = _HINTS["semantic_keywords"]
-        clone_selectors = _HINTS.get("carousel_clone_selectors", [])
-        state_classes = _HINTS.get("switchable_state_classes", [])
+        """Inject data-bid, data-bhidden, data-bicon, data-bgroup into live DOM (for BS4 fallback path)."""
+        hints = _get_hints()
+        icon_prefixes = hints["icon_class_prefixes"]
+        material_classes = hints["material_icon_classes"]
+        semantic_kw = hints["semantic_keywords"]
+        clone_selectors = hints.get("carousel_clone_selectors", [])
+        state_classes = hints.get("switchable_state_classes", [])
         # Build JS-safe literals
         prefix_re = "|".join(icon_prefixes)
         material_re = "|".join(c.replace("-", "[_-]") for c in material_classes)
@@ -214,7 +222,7 @@ class BrowserManager:
     def _walk_dom_js(self) -> list[dict]:
         """Walk live DOM in browser JS, return flat node list."""
         _load_js_walker()  # hot-reload if file changed
-        hints = _HINTS
+        hints = _get_hints()
         prefix_re = "|".join(hints["icon_class_prefixes"])
         material_re = "|".join(
             c.replace("-", "[_-]") for c in hints["material_icon_classes"]
@@ -261,6 +269,9 @@ class BrowserManager:
                 "text", "search", "email", "password", "url", "tel", "number", "",
             ],
             "clickableInputTypes": ["submit", "button", "reset", "image"],
+            "grayTextMinRgb": cfg.get("gray_text_min_rgb"),
+            "grayTextMaxDiff": cfg.get("gray_text_max_diff"),
+            "iconMaxSize": cfg.get("icon_max_size"),
         }
         return self._page.evaluate(_JS_DOM_WALKER, walker_cfg)
 
@@ -283,6 +294,8 @@ class BrowserManager:
             result = extract_unified_dom(html)
         self._node_map = result["node_map"]
         self._xpath_map = result["xpath_map"]
+        # Cache interactive nodes for DOM diff (before/after comparison)
+        self._last_filtered = result["interactive"]
         return result
 
     def _is_mac(self) -> bool:
@@ -381,6 +394,25 @@ class BrowserManager:
             self._page.wait_for_load_state("networkidle", timeout=cfg.get("network_idle_wait"))
         except Exception:
             pass
+        # Wait for DOM mutations to settle (dropdowns, autocomplete, dynamic UI)
+        # Uses MutationObserver: wait until no DOM changes for dom_settle_wait ms.
+        settle_ms = cfg.get("dom_settle_wait") or 500
+        try:
+            self._page.evaluate("""(settleMs) => new Promise(resolve => {
+                let timer = null
+                const observer = new MutationObserver(() => {
+                    clearTimeout(timer)
+                    timer = setTimeout(() => { observer.disconnect(); resolve() }, settleMs)
+                })
+                observer.observe(document.body, {
+                    childList: true, subtree: true,
+                    attributes: true, characterData: true
+                })
+                // If no mutation at all, resolve after settleMs
+                timer = setTimeout(() => { observer.disconnect(); resolve() }, settleMs)
+            })""", settle_ms)
+        except Exception:
+            pass
 
     def _action_result(self, message: str, refresh_dom: bool = True,
                        fields: list | None = None) -> dict:
@@ -445,6 +477,26 @@ class BrowserManager:
                     args=["--no-sandbox", "--disable-dev-shm-usage"],
                 )
                 self._context = self._browser.new_context(accept_downloads=True)
+                # Inject addEventListener interceptor BEFORE any page scripts.
+                # Captures every element that receives a click/mousedown/pointerdown
+                # listener — framework-agnostic (works with jQuery, React, Vue, vanilla).
+                self._context.add_init_script("""
+                    (() => {
+                        const CLICK_TYPES = new Set([
+                            'click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup',
+                            'tap', 'touchstart'
+                        ]);
+                        const clickEls = new Set();
+                        window.__bClickEls = clickEls;
+                        const origAdd = EventTarget.prototype.addEventListener;
+                        EventTarget.prototype.addEventListener = function(type, listener, options) {
+                            if (CLICK_TYPES.has(type) && this && this.nodeType === 1) {
+                                clickEls.add(this);
+                            }
+                            return origAdd.call(this, type, listener, options);
+                        };
+                    })();
+                """)
                 self._context.on("page", self._on_new_page)
                 self._page = self._context.new_page()
                 initial_page = self._page
@@ -591,31 +643,52 @@ class BrowserManager:
     # 12-18  Interaction
     # ==================================================================
 
+    def _attach_dom_diff(self, before, result, refresh_dom):
+        """Compute DOM diff if we have a before snapshot and refresh_dom is on."""
+        if refresh_dom and before:
+            from dom_parser import diff_dom
+            diff = diff_dom(before, self._last_filtered)
+            print(f"[DOM Diff] before={len(before)} after={len(self._last_filtered)} "
+                  f"added={len(diff['added'])} removed={len(diff['removed'])} "
+                  f"changed={len(diff['changed'])}")
+            result["dom_changes"] = diff
+        else:
+            print(f"[DOM Diff] skipped: refresh_dom={refresh_dom} before_len={len(before)}")
+
     def click(self, node_id, refresh_dom=True, fields=None):                      # 12
         with self._lock:
             self._ensure_open()
+            before = list(self._last_filtered)
             sel = self._resolve(node_id)
             self._page.locator(sel).first.click(timeout=cfg.get("click_timeout"))
-            return self._action_result(f"Clicked [{node_id}]", refresh_dom=refresh_dom, fields=fields)
+            result = self._action_result(f"Clicked [{node_id}]", refresh_dom=refresh_dom, fields=fields)
+            self._attach_dom_diff(before, result, refresh_dom)
+            return result
 
     def input_text(self, node_id, text, refresh_dom=True, fields=None):          # 13
         """Click to focus, select all, then type character-by-character (fires key events)."""
         with self._lock:
             self._ensure_open()
+            before = list(self._last_filtered)
             sel = self._resolve(node_id)
             self._page.locator(sel).first.click(timeout=cfg.get("click_timeout"))
             mod = "Meta" if self._is_mac() else "Control"
             self._page.keyboard.press(f"{mod}+a")
             self._page.keyboard.type(text, delay=cfg.get("type_delay"))
-            return self._action_result(f"Typed into [{node_id}]", refresh_dom=refresh_dom, fields=fields)
+            result = self._action_result(f"Typed into [{node_id}]", refresh_dom=refresh_dom, fields=fields)
+            self._attach_dom_diff(before, result, refresh_dom)
+            return result
 
     def fill_text(self, node_id, text, refresh_dom=True, fields=None):           # 13b
         """Fast-path: use Playwright .fill() for simple forms that don't need key events."""
         with self._lock:
             self._ensure_open()
+            before = list(self._last_filtered)
             sel = self._resolve(node_id)
             self._page.locator(sel).first.fill(text, timeout=cfg.get("input_timeout"))
-            return self._action_result(f"Filled [{node_id}]", refresh_dom=refresh_dom, fields=fields)
+            result = self._action_result(f"Filled [{node_id}]", refresh_dom=refresh_dom, fields=fields)
+            self._attach_dom_diff(before, result, refresh_dom)
+            return result
 
     def select(self, node_id, value, refresh_dom=True, fields=None):             # 14
         with self._lock:
@@ -859,6 +932,7 @@ class BrowserManager:
             self._playwright = None
             self._node_map = {}
             self._xpath_map = {}
+            self._last_filtered = []
             self._downloads = []
             self._new_pages = []
             return {"status": "ok", "message": "Browser closed"}
@@ -956,7 +1030,7 @@ class BrowserManager:
 
         # 2. Run DOM parsing on the benchmark page (not self._page)
         _load_js_walker()
-        hints = _HINTS
+        hints = _get_hints()
         prefix_re = "|".join(hints["icon_class_prefixes"])
         material_re = "|".join(
             c.replace("-", "[_-]") for c in hints["material_icon_classes"]
@@ -1003,6 +1077,9 @@ class BrowserManager:
                 "text", "search", "email", "password", "url", "tel", "number", "",
             ],
             "clickableInputTypes": ["submit", "button", "reset", "image"],
+            "grayTextMinRgb": cfg.get("gray_text_min_rgb"),
+            "grayTextMaxDiff": cfg.get("gray_text_max_diff"),
+            "iconMaxSize": cfg.get("icon_max_size"),
         }
         dom_nodes = page.evaluate(_JS_DOM_WALKER, walker_cfg)
         html_len = page.evaluate("document.documentElement.outerHTML.length")
@@ -1152,4 +1229,5 @@ class BrowserManager:
         self._playwright = None
         self._node_map = {}
         self._xpath_map = {}
+        self._last_filtered = []
         self._new_pages = []

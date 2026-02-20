@@ -7,12 +7,13 @@ import {
 import BrowserTabBar from '../components/BrowserTabBar'
 import InteractivePanel from '../components/InteractivePanel'
 import DomStats from '../components/DomStats'
+import DomChanges from '../components/DomChanges'
 import './ViewerPage.css'
 
 export default function ViewerPage() {
   const [isOpen, setIsOpen] = useState(false)
   const [currentUrl, setCurrentUrl] = useState(null)
-  const [url, setUrl] = useState('https://www.google.com')
+  const [url, setUrl] = useState('https://www.csair.com')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [pageSource, setPageSource] = useState('')
@@ -24,6 +25,7 @@ export default function ViewerPage() {
   const activePageIdRef = useRef(null)
   const [domLoading, setDomLoading] = useState(false)
   const [copiedKey, setCopiedKey] = useState(null)
+  const [apiResult, setApiResult] = useState(null)        // last action API response
   const [screenshotLoaded, setScreenshotLoaded] = useState(false)
   const screenshotRef = useRef(null)
   const screenshotInterval = useRef(null)
@@ -315,10 +317,15 @@ export default function ViewerPage() {
       }
       setMessage(res.data.message)
       updateTabsFromResponse(res.data)
+      // Save full API response and switch to result tab
+      setApiResult({ action, nodeId, text, ts: Date.now(), data: res.data })
+      setActiveTab('result')
       await fetchStatus()
       if (screenshotRef.current) screenshotRef.current.src = getScreenshotUrl()
     } catch (err) {
       setMessage(`Action failed: ${err.response?.data?.message || err.message}`)
+      setApiResult({ action, nodeId, text, ts: Date.now(), error: err.response?.data?.message || err.message })
+      setActiveTab('result')
     }
     setLoading(false)
   }
@@ -408,6 +415,10 @@ export default function ViewerPage() {
               onClick={() => setActiveTab('interactive')}
             >Elements</button>
             <button
+              className={`tab-btn ${activeTab === 'result' ? 'active' : ''}`}
+              onClick={() => setActiveTab('result')}
+            >API Result{apiResult ? ' ●' : ''}</button>
+            <button
               className={`tab-btn ${activeTab === 'source' ? 'active' : ''}`}
               onClick={() => setActiveTab('source')}
             >Page Source</button>
@@ -423,6 +434,8 @@ export default function ViewerPage() {
                 isOpen={isOpen}
                 onAction={handleAction}
               />
+            ) : activeTab === 'result' ? (
+              <DomChanges result={apiResult} />
             ) : (
               <>
                 <div className="code-toolbar">

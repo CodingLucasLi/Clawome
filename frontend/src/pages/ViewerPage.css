@@ -687,6 +687,137 @@
   color: #64748b;
 }
 
+/* ── DomChanges (API Result tab) ── */
+.dom-changes {
+  padding: 12px;
+  font-size: 13px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+.dc-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+.dc-action {
+  font-weight: 600;
+  color: #E8663C;
+}
+.dc-status {
+  color: #64748b;
+  flex: 1;
+}
+.dc-time {
+  color: #94a3b8;
+  font-size: 12px;
+}
+.dc-error {
+  color: #ef4444;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border-radius: 6px;
+}
+.dc-summary {
+  padding: 6px 12px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+.dc-summary.has-changes {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.dc-summary.no-changes {
+  background: #f0fdf4;
+  color: #15803d;
+}
+.dc-section {
+  margin-bottom: 12px;
+}
+.dc-section-title {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.dc-section-title.added { color: #16a34a; }
+.dc-section-title.removed { color: #dc2626; }
+.dc-section-title.changed { color: #d97706; }
+
+.dc-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.dc-node.added { background: #f0fdf4; }
+.dc-node.removed { background: #fef2f2; }
+.dc-node.changed { background: #fffbeb; }
+.dc-node:hover { filter: brightness(0.97); }
+
+.dc-hid {
+  color: #94a3b8;
+  font-family: monospace;
+  min-width: 48px;
+}
+.dc-tag {
+  display: inline-block;
+  background: #e2e8f0;
+  color: #475569;
+  border-radius: 3px;
+  padding: 0 5px;
+  font-family: monospace;
+  font-size: 11px;
+}
+.dc-actions {
+  color: #E8663C;
+  font-size: 11px;
+}
+.dc-label {
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 400px;
+}
+.dc-field {
+  color: #7c3aed;
+  font-family: monospace;
+  font-size: 11px;
+}
+.dc-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dc-before {
+  color: #dc2626;
+  text-decoration: line-through;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dc-arrow { color: #94a3b8; }
+.dc-after {
+  color: #16a34a;
+  font-weight: 500;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .viewer-layout {
