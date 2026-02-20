@@ -10,7 +10,7 @@ Base URL: {{BASE_URL}}/api
 
 Full endpoint details with request/response examples:
 
-- [Core APIs — core.md](/skill/core.md) — Navigation, DOM reading, interaction, scrolling, keyboard (20 endpoints)
+- [Core APIs — core.md](/skill/core.md) — Navigation, DOM reading, interaction, scrolling, keyboard (21 endpoints)
 - [Manage APIs — manage.md](/skill/manage.md) — Tabs, screenshot, file upload/download, page state, browser control (14 endpoints)
 - [Customize APIs — customize.md](/skill/customize.md) — Compressor scripts, configuration (8 endpoints)
 
@@ -61,6 +61,7 @@ Read page → Decide → Act → Read again. When finished:
   Read the page              GET  /browser/dom
   Click something            POST /browser/click {"node_id":"..."}
   Type into a field          POST /browser/input {"node_id":"...","text":"..."}
+  Fill a field (fast)        POST /browser/fill {"node_id":"...","text":"..."}
   Scroll down                POST /browser/scroll/down {"pixels":500}
   Press Enter                POST /browser/keypress {"key":"Enter"}
   Take a screenshot          GET  /browser/screenshot
@@ -75,6 +76,7 @@ Read page → Decide → Act → Read again. When finished:
 - Compressed DOM — Raw pages have thousands of noisy HTML tags. Clawome filters them down to only visible, interactive elements, saving 80-90% tokens.
 - node_id — Hierarchical IDs like "1", "1.2", "3.1.4". Target any element precisely — no CSS selectors, no guessing.
 - Auto-refresh — Every action (click, type, scroll) returns the updated DOM. You always have the latest state without extra calls.
+- DOM diff — Click, input, and fill actions return a `dom_changes` object showing what nodes were added, removed, or changed — no need to diff the DOM yourself.
 - Per-site compressors — Pluggable Python scripts auto-selected by URL pattern. Each website can have its own optimized compression logic.
 
 ---
@@ -95,3 +97,7 @@ All APIs return JSON:
 
   Success: {"status":"ok", "message":"...", "dom":"..."}
   Error:   {"status":"error", "message":"..."}
+
+Click, input, and fill actions also include `dom_changes`:
+
+  {"status":"ok", "dom":"...", "dom_changes":{"has_changes":true, "added":[...], "removed":[...], "changed":[...]}}

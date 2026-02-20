@@ -145,6 +145,10 @@ All runtime settings can be read and updated via the config API. Changes are per
 | `wait_for_element_timeout` | int | 10000 | Wait-for-element timeout (ms) |
 | `type_delay` | int | 20 | Delay between keystrokes (ms) |
 | `scroll_pixels` | int | 500 | Default scroll distance (px) |
+| `dom_settle_wait` | int | 500 | Wait for DOM mutations to settle after interactions (ms) |
+| `gray_text_min_rgb` | int | 150 | Min R/G/B value to detect fake placeholder (gray text) |
+| `gray_text_max_diff` | int | 20 | Max diff between R/G/B channels for gray detection |
+| `icon_max_size` | int | 80 | Max width/height (px) for icon container detection |
 | `headless` | bool | false | Run browser in headless mode |
 | `compressor_rules` | list | [] | Platform-level URL → compressor mapping rules |
 
