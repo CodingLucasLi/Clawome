@@ -241,6 +241,8 @@ Get the inner text of a specific node, or the entire page body.
 
 All interaction endpoints require a `node_id` from `GET /dom`. After each action, the updated DOM is returned automatically.
 
+Click, input, and fill actions also return a `dom_changes` object comparing the DOM before and after the action — useful for detecting dynamic UI changes (dropdowns, autocomplete, etc.) without diffing the full DOM yourself.
+
 ## POST /click
 
 Click on an element.
@@ -252,8 +254,24 @@ Click on an element.
 
 **Response:**
 ```json
-{"status": "ok", "message": "Clicked [1.2]", "dom": "...updated DOM..."}
+{
+  "status": "ok",
+  "message": "Clicked [1.2]",
+  "dom": "...",
+  "dom_changes": {
+    "has_changes": true,
+    "summary": "Added 3 nodes, removed 1 node, 2 nodes changed",
+    "added": [{"hid": "5", "tag": "div", "label": "Dropdown item", "actions": ["click"]}],
+    "removed": [],
+    "changed": [{"hid": "2", "tag": "input", "field": "state.value", "before": "", "after": "hello"}]
+  }
+}
 ```
+
+**`dom_changes` fields:**
+- `added` — nodes that appeared (new dropdowns, tooltips, etc.)
+- `removed` — nodes that disappeared
+- `changed` — nodes whose text, state, actions, or position (hid) changed
 
 **Notes:**
 - If clicking causes navigation, the returned DOM is from the new page
@@ -263,7 +281,7 @@ Click on an element.
 
 ## POST /input
 
-Fill text into an input field. **Replaces** existing content (clears first, then types).
+Type text into an input field character-by-character. **Replaces** existing content (clears first, then types). Fires key events for each character.
 
 **Body:**
 ```json
@@ -272,12 +290,32 @@ Fill text into an input field. **Replaces** existing content (clears first, then
 
 **Response:**
 ```json
-{"status": "ok", "message": "Typed into [1.1]", "dom": "..."}
+{"status": "ok", "message": "Typed into [1.1]", "dom": "...", "dom_changes": {"..."}}
 ```
 
 **Notes:**
 - Works on `<input>`, `<textarea>`, and contenteditable elements
 - To append text, read current value first via POST /text, then input the combined string
+
+---
+
+## POST /fill
+
+Fast-path: use Playwright `.fill()` for simple forms that don't need key events.
+
+**Body:**
+```json
+{"node_id": "1.1", "text": "hello world"}
+```
+
+**Response:**
+```json
+{"status": "ok", "message": "Filled [1.1]", "dom": "...", "dom_changes": {"..."}}
+```
+
+**Notes:**
+- Faster than POST /input but does not fire individual key events
+- Use POST /input if the page relies on keydown/keyup events (e.g., autocomplete)
 
 ---
 

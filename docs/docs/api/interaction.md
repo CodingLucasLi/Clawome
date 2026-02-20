@@ -6,6 +6,8 @@ sidebar_position: 3
 
 All interaction endpoints require a `node_id` obtained from `GET /dom`. After each action, the DOM is automatically refreshed and returned in the response.
 
+Click, Input, and Fill actions also return a `dom_changes` object comparing the DOM before and after the action. This is useful for detecting dynamic UI changes (dropdowns, autocomplete, etc.) without diffing the full DOM yourself.
+
 ## 12. Click
 
 Click on an element.
@@ -28,15 +30,31 @@ POST /api/browser/click
 {
   "status": "ok",
   "message": "Clicked [1.2]",
-  "dom": "..."
+  "dom": "...",
+  "dom_changes": {
+    "has_changes": true,
+    "summary": "Added 3 nodes, removed 1 node, 2 nodes changed",
+    "added": [
+      { "hid": "5", "tag": "div", "label": "Dropdown item", "actions": ["click"] }
+    ],
+    "removed": [],
+    "changed": [
+      { "hid": "2", "tag": "input", "label": "", "field": "state.value", "before": "", "after": "hello" }
+    ]
+  }
 }
 ```
+
+The `dom_changes` object contains:
+- **`added`** — nodes that appeared after the action (new dropdowns, tooltips, etc.)
+- **`removed`** — nodes that disappeared
+- **`changed`** — nodes whose text, state, actions, or position (hid) changed
 
 ---
 
 ## 13. Input Text
 
-Fill text into an input field (replaces existing content).
+Type text into an input field character-by-character (replaces existing content). Fires key events for each character.
 
 ```
 POST /api/browser/input
@@ -57,7 +75,38 @@ POST /api/browser/input
 {
   "status": "ok",
   "message": "Typed into [1.1]",
-  "dom": "..."
+  "dom": "...",
+  "dom_changes": { "..." }
+}
+```
+
+---
+
+## 13b. Fill Text
+
+Fast-path: use Playwright `.fill()` for simple forms that don't need key events.
+
+```
+POST /api/browser/fill
+```
+
+**Request Body:**
+
+```json
+{
+  "node_id": "1.1",
+  "text": "hello world"
+}
+```
+
+**Response:**
+
+```json
+{
+  "status": "ok",
+  "message": "Filled [1.1]",
+  "dom": "...",
+  "dom_changes": { "..." }
 }
 ```
 

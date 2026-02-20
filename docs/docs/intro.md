@@ -31,7 +31,7 @@ All successful responses return:
 }
 ```
 
-Action endpoints (click, type, scroll, etc.) automatically refresh the DOM after the action and return the updated DOM tree in the response.
+Action endpoints (click, type, scroll, etc.) automatically refresh the DOM after the action and return the updated DOM tree in the response. Click, input, and fill actions also return a `dom_changes` object with added/removed/changed nodes.
 
 Error responses return:
 
