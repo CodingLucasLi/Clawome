@@ -27,8 +27,7 @@ _COMPRESSOR_DIR = os.path.join(os.path.dirname(__file__), "compressors")
 
 # Official bundled compressor names (not including "default")
 OFFICIAL_SCRIPTS = frozenset([
-    "google_search", "wikipedia", "youtube",
-    "github", "stackoverflow", "amazon", "hackernews",
+    "google_search", "wikipedia", "youtube", "stackoverflow",
 ])
 
 # New-script template
