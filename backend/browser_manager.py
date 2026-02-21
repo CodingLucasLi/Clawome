@@ -418,7 +418,7 @@ class BrowserManager:
             pass
 
     def _action_result(self, message: str, refresh_dom: bool = True,
-                       fields: list | None = None) -> dict:
+                       fields: list = None) -> dict:
         """Post-action: auto-switch to new tab if opened, wait, optionally refresh dom.
 
         When *refresh_dom* is False the response only contains status,
