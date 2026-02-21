@@ -188,7 +188,10 @@ def _count_nodes(roots):
 def _collapse_popups(roots):
     result = []
     for node in roots:
-        if _is_popup(node) and node["children"]:
+        if _is_popup(node) and node["children"] and not _has_interactive(node):
+            # Only collapse popups with no interactive elements inside.
+            # Visible dialogs with buttons (e.g. cookie consent banners)
+            # must be kept — visual visibility is the sole criterion.
             n = _count_nodes(node["children"])
             node["text"] = f"··· {n} children"
             node["children"] = []
