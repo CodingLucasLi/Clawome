@@ -54,6 +54,9 @@ pnpm-debug.log*
 backend/.browser_session.json
 backend/.browser_config.json
 
+# Task Agent runtime logs
+backend/task_agent/logs/
+
 # Claude Code local config
 .claude/
 

@@ -237,7 +237,7 @@ export default function ViewerPage() {
         if (screenshotRef.current) screenshotRef.current.src = getScreenshotUrl()
       }
       update()
-      screenshotInterval.current = setInterval(update, 1000)
+      screenshotInterval.current = setInterval(update, 10000)
       fetchBrowserTabs()
       fetchRightPanel()
       panelInterval.current = setInterval(() => {

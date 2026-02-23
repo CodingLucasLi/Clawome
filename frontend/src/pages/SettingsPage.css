@@ -215,6 +215,12 @@
   background: #fffbf9;
 }
 
+.settings-input-text {
+  width: 320px;
+  text-align: left;
+  font-family: inherit;
+}
+
 .settings-unit {
   font-size: 11px;
   color: #94a3b8;

@@ -244,8 +244,8 @@
     // children that look like interactive items won't be marked.
     // Propagate data-bclick to visible direct children of clickable parents
     // that are non-semantic container tags (div, li, etc.) with text content.
-    try {
-        document.querySelectorAll('[data-bclick]').forEach(parent => {
+    document.querySelectorAll('[data-bclick]').forEach(parent => {
+        try {
             // Only propagate from elements that are list/menu containers
             // (have multiple similar children — typical dropdown/list pattern)
             const children = parent.children
@@ -257,13 +257,13 @@
                 if (ct === 'a' || ct === 'button' || ct === 'input') continue
                 if (ct === 'script' || ct === 'style') continue
                 // Child must be visible and have text content
-                if (!child.checkVisibility()) continue
+                try { if (!child.checkVisibility()) continue } catch(e) { continue }
                 const text = (child.innerText || '').trim()
                 if (!text) continue
                 child.setAttribute('data-bclick', '1')
             }
-        })
-    } catch(e) {}
+        } catch(e) {}
+    })
 
     // ── Helpers ──
 

@@ -13,6 +13,10 @@ import config
 app = Flask(__name__)
 CORS(app)
 
+# Task Agent API (LangGraph workflow)
+from agent_routes import agent_bp
+app.register_blueprint(agent_bp)
+
 manager = BrowserManager()
 
 

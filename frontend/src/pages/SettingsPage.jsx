@@ -10,6 +10,7 @@ import './SettingsPage.css'
 const SECTIONS = [
   { key: 'general',   label: 'General',    icon: '\u2699' },
   { key: 'timeouts',  label: 'Timeouts',   icon: '\u23F1' },
+  { key: 'agent',     label: 'Agent',      icon: '\u{1F916}' },
   { key: 'scripts',   label: 'Scripts',    icon: '\u{1F4DC}' },
   { key: 'rules',     label: 'URL Rules',  icon: '\u{1F517}' },
 ]
@@ -43,6 +44,25 @@ const SECTION_GROUPS = {
       items: [
         { key: 'type_delay', label: 'Type Delay', unit: 'ms', desc: 'Delay between keystrokes when typing' },
         { key: 'scroll_pixels', label: 'Scroll Distance', unit: 'px', desc: 'Default scroll distance per step' },
+      ],
+    },
+  ],
+  agent: [
+    {
+      title: 'LLM Provider',
+      items: [
+        { key: 'llm_api_key', label: 'API Key', unit: '', desc: 'API key for the LLM provider (OpenAI-compatible endpoint)', type: 'password', placeholder: 'sk-...' },
+        { key: 'llm_api_base', label: 'API Base URL', unit: '', desc: 'OpenAI-compatible endpoint URL', type: 'text', placeholder: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
+        { key: 'llm_model', label: 'Model Name', unit: '', desc: 'Bare model name, no provider prefix. e.g. qwen3.5-plus, gpt-4o', type: 'text', placeholder: 'qwen3.5-plus' },
+        { key: 'llm_temperature', label: 'Temperature', unit: '', desc: '0 = deterministic, higher = more creative' },
+        { key: 'llm_max_tokens', label: 'Max Tokens', unit: 'tokens', desc: 'Maximum tokens per LLM response' },
+      ],
+    },
+    {
+      title: 'Agent Behavior',
+      items: [
+        { key: 'agent_max_steps', label: 'Max Steps per Subtask', unit: 'steps', desc: 'Maximum action steps before a subtask is force-completed' },
+        { key: 'agent_start_url', label: 'Start URL', unit: '', desc: 'Browser opens this URL at the start of each task', type: 'text', placeholder: 'https://www.baidu.com' },
       ],
     },
   ],
@@ -85,6 +105,10 @@ const SECTION_META = {
   general: {
     title: 'General',
     desc: 'DOM parsing limits and keyboard/scroll behavior.',
+  },
+  agent: {
+    title: 'Task Agent',
+    desc: 'LLM provider credentials and agent execution parameters for the /agent page.',
   },
   timeouts: {
     title: 'Timeouts',
@@ -390,6 +414,14 @@ export default function SettingsPage() {
                               {values[item.key] ? 'On' : 'Off'}
                             </span>
                           </label>
+                        ) : item.type === 'text' || item.type === 'password' ? (
+                          <input
+                            type={item.type}
+                            className={`settings-input settings-input-text ${isOverridden ? 'settings-input-modified' : ''}`}
+                            value={values[item.key] ?? ''}
+                            placeholder={item.placeholder || (item.type === 'password' ? '(not set)' : '')}
+                            onChange={e => handleChange(item.key, e.target.value)}
+                          />
                         ) : (
                           <>
                             <input
@@ -750,6 +782,7 @@ export default function SettingsPage() {
         </div>
 
         {section === 'general' && renderConfigSection('general')}
+        {section === 'agent' && renderConfigSection('agent')}
         {section === 'timeouts' && renderConfigSection('timeouts')}
         {section === 'scripts' && renderScriptsSection()}
         {section === 'rules' && renderRulesSection()}

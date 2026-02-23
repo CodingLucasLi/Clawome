@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import { NavLink, Link } from 'react-router-dom'
+import { NavLink, Link, useLocation } from 'react-router-dom'
 import { getStatus, getConfig } from '../api'
 import './Header.css'
 
 export default function Header() {
   const [browserOpen, setBrowserOpen] = useState(false)
   const [headless, setHeadless] = useState(false)
+  const location = useLocation()
+  const isHome = location.pathname === '/'
 
   const poll = useCallback(async () => {
     try {
@@ -26,7 +28,7 @@ export default function Header() {
   const showHeadlessBanner = headless && browserOpen
 
   return (
-    <header className="header">
+    <header className={`header${isHome ? ' header-home' : ''}`}>
       <Link to="/" className="header-brand">
         <img src="/clawome.png" alt="" className="header-logo" />
         Clawome
@@ -43,6 +45,9 @@ export default function Header() {
         </NavLink>
         <NavLink to="/benchmark" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           Benchmark
+        </NavLink>
+        <NavLink to="/agent" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+          Agent
         </NavLink>
         <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           Settings

@@ -399,20 +399,25 @@ class BrowserManager:
             pass
         # Wait for DOM mutations to settle (dropdowns, autocomplete, dynamic UI)
         # Uses MutationObserver: wait until no DOM changes for dom_settle_wait ms.
+        # Hard cap at 5× settle_ms to prevent infinite hang on pages with
+        # continuous animations, CSS transitions, or AJAX polling.
         settle_ms = cfg.get("dom_settle_wait") or 500
         try:
             self._page.evaluate("""(settleMs) => new Promise(resolve => {
                 let timer = null
+                const done = () => { observer.disconnect(); resolve() }
                 const observer = new MutationObserver(() => {
                     clearTimeout(timer)
-                    timer = setTimeout(() => { observer.disconnect(); resolve() }, settleMs)
+                    timer = setTimeout(done, settleMs)
                 })
                 observer.observe(document.body, {
                     childList: true, subtree: true,
                     attributes: true, characterData: true
                 })
                 // If no mutation at all, resolve after settleMs
-                timer = setTimeout(() => { observer.disconnect(); resolve() }, settleMs)
+                timer = setTimeout(done, settleMs)
+                // Hard cap: never wait longer than 5× settleMs
+                setTimeout(done, settleMs * 5)
             })""", settle_ms)
         except Exception:
             pass

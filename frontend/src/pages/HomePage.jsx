@@ -1,111 +1,151 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { DotMatrixBackground } from '../components/DotMatrixBackground'
+import '../components/DotMatrixBackground.css'
 import './HomePage.css'
 
 export default function HomePage() {
-  const [role, setRole] = useState('agent') // 'agent' | 'human' | null
-
   return (
     <div className="home-page">
-      {/* ── Hero ── */}
+      {/* ── Hero: left intro + right two paths ── */}
       <section className="home-hero">
-        <img src="/clawome.png" alt="Clawome" className="home-hero-logo" />
-        <h1>Clawome</h1>
-        <p className="home-hero-tagline">
-          Give your agent eyes and hands on any website.
-        </p>
+        <DotMatrixBackground color="lobster" vibrant />
+        <div className="hero-layout">
+          {/* Left: brand + intro */}
+          <div className="hero-left">
+            <div className="hero-brand">
+              <img src="/clawome.png" alt="Clawome" className="home-hero-logo" />
+              <h1>Clawome</h1>
+            </div>
+            <p className="home-hero-tagline">
+              Browser automation for AI agents.<br />
+              From REST APIs to fully autonomous task execution.
+            </p>
+            <div className="hero-actions">
+              <Link to="/agent" className="hero-btn hero-btn-primary">
+                Try Task Agent {'\u2192'}
+              </Link>
+              <Link to="/docs" className="hero-btn hero-btn-ghost">
+                API Docs
+              </Link>
+            </div>
+          </div>
 
-        {/* Role selector */}
-        <div className="role-selector">
-          <button
-            className={`role-btn role-btn-agent ${role === 'agent' ? 'role-active' : ''}`}
-            onClick={() => setRole(role === 'agent' ? null : 'agent')}
-          >
-            <span className="role-emoji">🤖</span> I'm an Agent
-          </button>
-          <button
-            className={`role-btn role-btn-human ${role === 'human' ? 'role-active' : ''}`}
-            onClick={() => setRole(role === 'human' ? null : 'human')}
-          >
-            <span className="role-emoji">👤</span> I'm a Human
-          </button>
+          {/* Right: two path cards */}
+          <div className="hero-right">
+            {/* API Integration path */}
+            <div className="path-card">
+              <div className="path-header">
+                <span className="path-icon">{'</>'}</span>
+                <span className="path-title">REST API</span>
+                <span className="path-tag">Programmatic</span>
+              </div>
+              <div className="path-steps">
+                <div className="path-step">
+                  <span className="path-num">1</span>
+                  <div>
+                    <span className="path-step-label">Get skill file</span>
+                    <a href="/skill" className="path-link" target="_blank" rel="noopener noreferrer">clawome-skill.md</a>
+                  </div>
+                </div>
+                <div className="path-step">
+                  <span className="path-num">2</span>
+                  <div>
+                    <span className="path-step-label">Open & read DOM</span>
+                    <code className="path-code">POST /open {'\u2192'} GET /dom</code>
+                  </div>
+                </div>
+                <div className="path-step">
+                  <span className="path-num">3</span>
+                  <div>
+                    <span className="path-step-label">Act & loop</span>
+                    <code className="path-code">/click | /type | /scroll {'\u2192'} /dom</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Task Agent path */}
+            <div className="path-card path-card-highlight">
+              <div className="path-header">
+                <span className="path-icon">{'\u{1F9E0}'}</span>
+                <span className="path-title">Task Agent</span>
+                <span className="path-tag path-tag-hot">Autonomous</span>
+              </div>
+              <div className="path-steps">
+                <div className="path-step">
+                  <span className="path-num">1</span>
+                  <div>
+                    <span className="path-step-label">Describe your task</span>
+                    <span className="path-hint">Natural language input</span>
+                  </div>
+                </div>
+                <div className="path-step">
+                  <span className="path-num">2</span>
+                  <div>
+                    <span className="path-step-label">Agent plans & browses</span>
+                    <span className="path-hint">Auto subtasks, navigation, decisions</span>
+                  </div>
+                </div>
+                <div className="path-step">
+                  <span className="path-num">3</span>
+                  <div>
+                    <span className="path-step-label">Get structured results</span>
+                    <span className="path-hint">Findings, links, completion status</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* ── Agent onboarding card ── */}
-        {role === 'agent' && (
-          <div className="onboard-card onboard-agent">
-            <div className="onboard-step">
-              <span className="onboard-step-num">1</span>
-              <div className="onboard-step-body">
-                <span className="onboard-step-label">Get the Skill File</span>
-                <p>Feed this to your LLM — it contains all API endpoints, parameters, and workflow patterns.</p>
-              </div>
-              <a href="/skill" className="onboard-action" target="_blank" rel="noopener noreferrer">
-                📄 clawome-skill.md
-              </a>
-            </div>
-            <div className="onboard-divider" />
-            <div className="onboard-step">
-              <span className="onboard-step-num">2</span>
-              <div className="onboard-step-body">
-                <span className="onboard-step-label">Start browsing</span>
-                <code className="onboard-code">POST http://localhost:5001/api/browser/open</code>
-              </div>
-            </div>
-            <div className="onboard-divider" />
-            <div className="onboard-step">
-              <span className="onboard-step-num">3</span>
-              <div className="onboard-step-body">
-                <span className="onboard-step-label">Read → Act → Loop</span>
-                <code className="onboard-code">GET /dom → POST /click → GET /dom → ...</code>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Human onboarding card ── */}
-        {role === 'human' && (
-          <div className="onboard-card onboard-human">
-            <div className="onboard-step">
-              <span className="onboard-step-num">1</span>
-              <div className="onboard-step-body">
-                <span className="onboard-step-label">Try the Playground</span>
-                <p>Open any website, see the compressed DOM, click nodes — all in a visual interface.</p>
-              </div>
-              <Link to="/playground" className="onboard-action onboard-action-primary">
-                Open Playground →
-              </Link>
-            </div>
-            <div className="onboard-divider" />
-            <div className="onboard-step">
-              <span className="onboard-step-num">2</span>
-              <div className="onboard-step-body">
-                <span className="onboard-step-label">Customize Compressors</span>
-                <p>Write per-site Python scripts in Settings — auto-selected by URL pattern.</p>
-              </div>
-              <Link to="/settings" className="onboard-action">
-                Settings →
-              </Link>
-            </div>
-            <div className="onboard-divider" />
-            <div className="onboard-step">
-              <span className="onboard-step-num">3</span>
-              <div className="onboard-step-body">
-                <span className="onboard-step-label">Read the API Docs</span>
-                <p>45 REST endpoints across 12 categories — full reference with examples.</p>
-              </div>
-              <Link to="/docs" className="onboard-action">
-                API Docs →
-              </Link>
-            </div>
-          </div>
-        )}
       </section>
 
-      {/* ── Before/After — the "aha" ── */}
+      {/* ── Pipeline visualization ── */}
+      <section className="home-section home-pipeline">
+        <div className="section-header">
+          <span className="section-tag">How it works</span>
+          <h2>From task to result in one command</h2>
+          <p className="home-section-sub">The agent autonomously plans, navigates, and delivers.</p>
+        </div>
+        <div className="pipeline-demo">
+          <div className="pipeline-input">
+            <div className="pipeline-prompt-label">Task</div>
+            <div className="pipeline-prompt">"Search Hacker News for the latest AI news and summarize the top 3 stories"</div>
+          </div>
+          <div className="pipeline-flow">
+            <div className="pipeline-step">
+              <div className="pipeline-step-icon">{'\u{1F9E0}'}</div>
+              <div className="pipeline-step-label">Plan</div>
+              <div className="pipeline-step-desc">Break into subtasks</div>
+            </div>
+            <div className="pipeline-connector"><span>{'\u2192'}</span></div>
+            <div className="pipeline-step">
+              <div className="pipeline-step-icon">{'\u{1F310}'}</div>
+              <div className="pipeline-step-label">Browse</div>
+              <div className="pipeline-step-desc">Navigate & interact</div>
+            </div>
+            <div className="pipeline-connector"><span>{'\u2192'}</span></div>
+            <div className="pipeline-step">
+              <div className="pipeline-step-icon">{'\u{1F50D}'}</div>
+              <div className="pipeline-step-label">Evaluate</div>
+              <div className="pipeline-step-desc">Check & adapt plan</div>
+            </div>
+            <div className="pipeline-connector"><span>{'\u2192'}</span></div>
+            <div className="pipeline-step pipeline-step-done">
+              <div className="pipeline-step-icon">{'\u2705'}</div>
+              <div className="pipeline-step-label">Result</div>
+              <div className="pipeline-step-desc">Structured output</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── DOM Compression ── */}
       <section className="home-section home-comparison">
-        <h2>What your agent actually sees</h2>
-        <p className="home-section-sub">Raw HTML is noisy. Clawome gives agents exactly what they need.</p>
+        <div className="section-header">
+          <span className="section-tag">DOM Compression</span>
+          <h2>What your agent actually sees</h2>
+          <p className="home-section-sub">Raw HTML is noisy. Clawome compresses it to what matters.</p>
+        </div>
         <div className="compare-grid">
           <div className="compare-card compare-before">
             <div className="compare-label">Raw HTML <span className="compare-size">~18,000 tokens</span></div>
@@ -128,7 +168,6 @@ export default function HomePage() {
       ...800 more lines...`}</pre>
           </div>
           <div className="compare-arrow">
-            <span className="compare-arrow-label">Clawome</span>
             <span className="compare-arrow-icon">{'\u2192'}</span>
           </div>
           <div className="compare-card compare-after">
@@ -142,91 +181,68 @@ export default function HomePage() {
 [4] a(href): Images`}</pre>
           </div>
         </div>
-        <p className="compare-caption">Agent reads 7 nodes instead of 800. Every node has a stable ID for instant targeting.</p>
+        <p className="compare-caption">7 nodes instead of 800. Every node gets a stable hierarchical ID.</p>
       </section>
 
-      {/* ── How It Works — 3 steps ── */}
-      <section className="home-section">
-        <h2>Agent integration in 3 calls</h2>
-        <p className="home-section-sub">No Selenium. No Puppeteer scripts. Just REST.</p>
-        <div className="home-steps">
-          <div className="step-card">
-            <div className="step-num">1</div>
-            <div className="step-body">
-              <h3>Open</h3>
-              <code className="step-code">POST /open {`{"url":"https://..."}`}</code>
-              <p>Launches a real Chromium browser.</p>
-            </div>
-          </div>
-          <div className="step-arrow">{'\u2192'}</div>
-          <div className="step-card step-card-highlight">
-            <div className="step-num">2</div>
-            <div className="step-body">
-              <h3>Read DOM</h3>
-              <code className="step-code">GET /dom</code>
-              <p>Returns <strong>compressed DOM tree</strong> with hierarchical node IDs.</p>
-              <span className="step-badge">80–90% compression</span>
-            </div>
-          </div>
-          <div className="step-arrow">{'\u2192'}</div>
-          <div className="step-card">
-            <div className="step-num">3</div>
-            <div className="step-body">
-              <h3>Act</h3>
-              <code className="step-code">POST /click {`{"node_id":"1.2"}`}</code>
-              <p>Click, type, scroll — returns updated DOM. Loop until done.</p>
-            </div>
-          </div>
+      {/* ── Features ── */}
+      <section className="home-section home-features-section">
+        <div className="section-header">
+          <h2>Built for agents</h2>
         </div>
-      </section>
-
-      {/* ── 4 Pillars ── */}
-      <section className="home-section">
-        <h2>Built for agents</h2>
         <div className="home-features">
+          <div className="home-feature-card">
+            <div className="feature-icon">{'\u{1F9E0}'}</div>
+            <h3>Autonomous execution</h3>
+            <p>LLM-powered agent plans subtasks, browses pages, and adapts in real-time.</p>
+          </div>
+          <div className="home-feature-card">
+            <div className="feature-icon">{'\u26A1'}</div>
+            <h3>80–90% fewer tokens</h3>
+            <p>Strips wrappers, scripts, and noise. Agents see only what matters.</p>
+          </div>
           <div className="home-feature-card">
             <div className="feature-icon">{'\u{1F3AF}'}</div>
             <h3>One-shot targeting</h3>
             <p>Hierarchical IDs like <code>3.1.4</code> — click any element on the first try.</p>
           </div>
           <div className="home-feature-card">
-            <div className="feature-icon">{'\u26A1'}</div>
-            <h3>80–90% fewer tokens</h3>
-            <p>Strips invisible wrappers, scripts, and noise. Agents see only what matters.</p>
+            <div className="feature-icon">{'\u{1F6E1}'}</div>
+            <h3>Supervisor & recovery</h3>
+            <p>Detects infinite loops, recovers from errors, replans when stuck.</p>
           </div>
           <div className="home-feature-card">
             <div className="feature-icon">{'\u{1F9E9}'}</div>
             <h3>Per-site compressors</h3>
-            <p>Drop a Python script — auto-activates by URL. Each site gets its own optimizer.</p>
+            <p>Python scripts auto-activate by URL. Each site gets its own optimizer.</p>
           </div>
           <div className="home-feature-card">
-            <div className="feature-icon">{'\u{1F504}'}</div>
-            <h3>Action → DOM loop</h3>
-            <p>Every action returns updated DOM automatically. Agents stay in sync.</p>
+            <div className="feature-icon">{'\u{1F4CA}'}</div>
+            <h3>Real-time observability</h3>
+            <p>Live progress, step visualization, token usage, and cost tracking.</p>
           </div>
         </div>
       </section>
 
-      {/* ── Stats bar ── */}
+      {/* ── Stats ── */}
       <section className="home-stats-bar">
         <div className="stat-item">
-          <div className="stat-number">45</div>
+          <div className="stat-number">45+</div>
           <div className="stat-label">REST APIs</div>
         </div>
         <div className="stat-divider" />
         <div className="stat-item">
-          <div className="stat-number">12</div>
-          <div className="stat-label">Categories</div>
+          <div className="stat-number">8</div>
+          <div className="stat-label">Action types</div>
         </div>
         <div className="stat-divider" />
         <div className="stat-item">
-          <div className="stat-number">80–90%</div>
+          <div className="stat-number">90%</div>
           <div className="stat-label">Token savings</div>
         </div>
         <div className="stat-divider" />
         <div className="stat-item">
-          <div className="stat-number">&lt;30</div>
-          <div className="stat-label">Tokens per action</div>
+          <div className="stat-number">Auto</div>
+          <div className="stat-label">Task planning</div>
         </div>
       </section>
     </div>

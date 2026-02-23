@@ -279,3 +279,19 @@ export function deleteCompressor(name) {
 export function getCompressorTemplate() {
   return api.get('/compressors/template')
 }
+
+// ======================================================================
+// Task Agent
+// ======================================================================
+
+export function startAgent(task) {
+  return api.post('/agent/start', { task })
+}
+
+export function getAgentStatus() {
+  return api.get('/agent/status')
+}
+
+export function stopAgent() {
+  return api.post('/agent/stop')
+}

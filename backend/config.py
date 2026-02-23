@@ -137,15 +137,21 @@ DEFAULTS = {
     # e.g. {"youtube": {"max_items": 10, "remove_guide": false}}
     "compressor_settings": {},
 
-    # ── LLM / Task Agent (Phase 2 — reserved) ──
-    # Provider: "anthropic", "openai", or "" (disabled)
-    "llm_provider": "",
-    # API key for the LLM provider
+    # ── LLM / Task Agent ──
+    # API key for the LLM provider (OpenAI-compatible endpoint)
     "llm_api_key": "",
-    # Model name, e.g. "claude-sonnet-4-20250514", "gpt-4o"
-    "llm_model": "",
+    # API base URL, e.g. "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    "llm_api_base": "",
+    # Model name, e.g. "qwen3.5-plus", "gpt-4o"
+    "llm_model": "qwen3.5-plus",
+    # Temperature (0 = deterministic)
+    "llm_temperature": 0.0,
     # Max tokens per LLM response
     "llm_max_tokens": 4096,
+    # Agent max steps per subtask
+    "agent_max_steps": 15,
+    # Start URL for browser agent
+    "agent_start_url": "https://www.baidu.com",
 }
 
 # ── Runtime state ──
