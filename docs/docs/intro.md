@@ -3,14 +3,15 @@ slug: /
 sidebar_position: 1
 ---
 
-# Browser3 API Reference
+# Clawome API Reference
 
-Browser3 provides **37 REST APIs** for agent-driven browser automation via Playwright.
+Clawome provides **37 Browser REST APIs** for DOM compression and browser automation via Playwright, plus a **Task Agent API** for autonomous multi-step web browsing powered by LangGraph.
 
-## Base URL
+## Base URLs
 
 ```
-http://localhost:5001/api/browser
+Browser API:  http://localhost:5001/api/browser
+Agent API:    http://localhost:5001/api/agent
 ```
 
 ## Concepts
@@ -44,6 +45,8 @@ Error responses return:
 
 ## API Categories
 
+### Browser APIs (`/api/browser`)
+
 | # | Category | Endpoints | Description |
 |---|----------|-----------|-------------|
 | 1-5 | **Navigation** | open, back, forward, refresh, get_url | Page navigation |
@@ -56,6 +59,16 @@ Error responses return:
 | 30-31 | **File & Download** | upload, get_downloads | File operations |
 | 32-36 | **Page State** | cookies, set_cookie, viewport, wait, wait_for | Page state & timing |
 | 37 | **Control** | close | Browser lifecycle |
+
+### Task Agent APIs (`/api/agent`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/agent/start` | Start autonomous task (body: `{description}`) |
+| GET | `/api/agent/status` | Poll task progress, subtasks, steps, LLM usage |
+| POST | `/api/agent/stop` | Cancel running task |
+
+See [Task Agent](./api/task-agent.md) for full documentation.
 
 ## Typical Agent Workflow
 

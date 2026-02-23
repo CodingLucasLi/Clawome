@@ -101,7 +101,7 @@ function SubtaskCard({ st, steps, defaultExpanded }) {
       </div>
       {st.result && (
         <div className="agent-card-result">
-          {st.result.length > 100 ? st.result.slice(0, 100) + '…' : st.result}
+          <Linkify>{st.result}</Linkify>
         </div>
       )}
       {expanded && hasSteps && (

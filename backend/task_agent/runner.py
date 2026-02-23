@@ -260,14 +260,20 @@ def _run_in_thread(description, task_id):
                 _current_status["status"] = "completed"
                 _current_status["final_result"] = result.get("final_result", "")
                 usage = result.get("llm_usage")
-                if usage and hasattr(usage, "calls"):
-                    _current_status["llm_usage"] = {
-                        "calls": usage.calls,
-                        "input_tokens": usage.input_tokens,
-                        "output_tokens": usage.output_tokens,
-                        "total_tokens": usage.total_tokens,
-                        "cost": round(usage.cost, 4),
-                    }
+                if usage:
+                    # LangGraph returns state as dict; handle both dict and object
+                    _get = (lambda u, k: u.get(k, 0)) if isinstance(usage, dict) else (lambda u, k: getattr(u, k, 0))
+                    inp = _get(usage, "input_tokens")
+                    out = _get(usage, "output_tokens")
+                    calls = _get(usage, "calls")
+                    if calls > 0:
+                        _current_status["llm_usage"] = {
+                            "calls": calls,
+                            "input_tokens": inp,
+                            "output_tokens": out,
+                            "total_tokens": inp + out,
+                            "cost": round(inp / 1000 * 0.004 + out / 1000 * 0.012, 4),
+                        }
                 # Read final subtask + step data
                 try:
                     log_path = run_context.get_log_path("task_plan.json")

@@ -5,8 +5,8 @@
 <h1 align="center">Clawome</h1>
 
 <p align="center">
-  <strong>DOM Compressor for AI Agents</strong><br/>
-  Turn 300K-token web pages into 3K-token structured trees that AI can actually read.
+  <strong>DOM Compressor + Task Agent for AI Agents</strong><br/>
+  Turn 300K-token web pages into 3K-token structured trees, and let AI agents autonomously browse the web.
 </p>
 
 <p align="center">
@@ -178,6 +178,70 @@ POST /api/browser/dom
 | POST | `/api/browser/close` | Close browser |
 | GET | `/api/browser/screenshot` | Capture screenshot (PNG) |
 
+## Task Agent (v2.0)
+
+Clawome v2.0 adds a **Task Agent** that can autonomously browse the web to complete complex tasks. Give it a natural language goal, and it will plan subtasks, execute browser actions, evaluate progress, and return structured results.
+
+### How It Works
+
+```
+User: "Find AI-related programs at NYU Tandon"
+    |
+    v
+Main Planner (LLM)  ─── Decompose into subtasks
+    |
+    v
+Executor Loop:
+    Read DOM → LLM decides action → Execute → Log
+    |                                          |
+    +── Supervisor (every 5 steps, anomaly check)
+    +── Evaluator (per subtask completion)
+    |
+    v
+Final Review (LLM) ─── Verify all requirements met
+    |                          |
+    v                     (not satisfied)
+Summary + Result            Replan → More subtasks
+```
+
+### Agent API
+
+| Method | Endpoint | Body | Description |
+|--------|----------|------|-------------|
+| POST | `/api/agent/start` | `{description}` | Start a new task |
+| GET | `/api/agent/status` | | Poll task progress (subtasks, steps, LLM usage) |
+| POST | `/api/agent/stop` | | Cancel running task |
+
+### Agent Configuration
+
+Configure in the Settings UI under "Agent" tab:
+
+| Setting | Description |
+|---------|-------------|
+| API Key | LLM provider API key |
+| API Base URL | LLM provider endpoint (OpenAI-compatible) |
+| Model Name | Model to use (e.g. `gpt-4o`, `deepseek-chat`) |
+
+### Workflow Nodes
+
+| Node | Role | Trigger |
+|------|------|---------|
+| `main_planner` | Decompose task into numbered subtasks | Once at start |
+| `step_exec` | Execute single browser action via LLM | Every step |
+| `supervisor` | Detect execution anomalies (loops, stuck) | Every 5 steps |
+| `page_doctor` | Diagnose and fix page loading issues | On errors |
+| `evaluate` | Assess subtask completion, extract findings | On subtask done |
+| `final_check` | Verify all requirements satisfied | After all subtasks |
+| `replan` | Add supplementary subtasks if incomplete | On review failure |
+| `summary` | Aggregate results and statistics | On success |
+
+### Safety Constraints
+
+- **Browser-only**: Agent can only perform web browsing actions (no phone calls, emails, file downloads)
+- **Form guard**: Can fill forms but never submits unless the user explicitly asks
+- **Contact extraction**: Extracts and reports phone/email info instead of attempting to use them
+- **Hard limit**: `recursion_limit=150` as safety net against runaway execution
+
 ## Benchmarks
 
 | Page | Raw HTML Tokens | Compressed Tokens | Savings | Completeness |
@@ -197,6 +261,7 @@ POST /api/browser/dom
 clawome/
 ├── backend/                     # Python Flask API
 │   ├── app.py                   # REST API endpoints
+│   ├── agent_routes.py          # Task Agent API endpoints
 │   ├── browser_manager.py       # Playwright browser control
 │   ├── compressor_manager.py    # Script management
 │   ├── config.py                # Configuration system
@@ -207,9 +272,19 @@ clawome/
 │   │   ├── wikipedia.py         # Wikipedia article optimizer
 │   │   ├── stackoverflow.py     # Stack Overflow Q&A optimizer
 │   │   └── youtube.py           # YouTube page optimizer
+│   ├── task_agent/              # LangGraph-based Task Agent (v2.0)
+│   │   ├── runner.py            # Background thread execution + cancellation
+│   │   ├── run_context.py       # Per-run log directory + cancellation flag
+│   │   ├── agent_config/        # Agent settings (LLM, intervals)
+│   │   ├── models/              # Pydantic schemas (AgentState, Task, Memory)
+│   │   ├── nodes/               # Workflow nodes (planner, executor, evaluator...)
+│   │   ├── workflows/           # LangGraph workflow definition
+│   │   ├── browser/             # Browser API adapter
+│   │   ├── llm/                 # LLM provider abstraction
+│   │   └── utils/               # JSON extraction, logging
 │   └── skill/                   # MCP skill documentation
 ├── frontend/                    # React + Vite dashboard
-│   ├── src/pages/               # Settings, Playground, Benchmark, Docs
+│   ├── src/pages/               # Settings, Playground, Agent, Docs
 │   └── src/components/          # UI components
 └── docs/                        # Docusaurus documentation
 ```
@@ -251,7 +326,7 @@ Key settings (all configurable via UI or API):
 ## Roadmap
 
 - [x] **v1.0** - DOM compression API with pluggable scripts
-- [ ] **v2.0** - Task Agent API: `POST /api/task {"goal": "Find TOEFL requirements", "url": "..."}` with built-in LLM planning and execution loop
+- [x] **v2.0** - Task Agent with LangGraph workflow: multi-step planning, browser automation, supervisor monitoring, progress evaluation, and auto-replan
 
 ## Third-Party Libraries
 
@@ -261,6 +336,9 @@ Key settings (all configurable via UI or API):
 | [Flask](https://github.com/pallets/flask) | BSD 3-Clause | REST API server |
 | [React](https://github.com/facebook/react) | MIT | Frontend UI |
 | [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) | MIT | HTML parsing (fallback) |
+| [LangGraph](https://github.com/langchain-ai/langgraph) | MIT | Task Agent workflow engine |
+| [LangChain](https://github.com/langchain-ai/langchain) | MIT | LLM provider abstraction |
+| [Pydantic](https://github.com/pydantic/pydantic) | MIT | Schema validation for agent state |
 
 ## License
 
