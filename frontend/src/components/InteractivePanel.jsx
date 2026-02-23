@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 // Strip ⟨⟩ markers used by the DOM walker for agent consumption
 const cleanLabel = (s) => s ? s.replace(/[⟨⟩]/g, '') : ''
@@ -10,10 +11,11 @@ const TAG_COLORS = {
 }
 
 export default function InteractivePanel({ nodes, isOpen, onAction }) {
+  const { t } = useTranslation()
   const [typeValues, setTypeValues] = useState({})
 
-  if (!isOpen) return <div className="panel-placeholder">Browser is closed.</div>
-  if (!nodes || nodes.length === 0) return <div className="panel-placeholder">Navigate to a page to see elements.</div>
+  if (!isOpen) return <div className="panel-placeholder">{t('interactive.browserClosed')}</div>
+  if (!nodes || nodes.length === 0) return <div className="panel-placeholder">{t('interactive.navigateFirst')}</div>
 
   return (
     <div className="interactive-list">
@@ -50,7 +52,7 @@ export default function InteractivePanel({ nodes, isOpen, onAction }) {
                 className="action-btn action-click"
                 onClick={() => onAction('click', n.hid)}
               >
-                Click
+                {t('interactive.click')}
               </button>
             )}
 
@@ -59,7 +61,7 @@ export default function InteractivePanel({ nodes, isOpen, onAction }) {
                 <input
                   className="action-type-input"
                   type="text"
-                  placeholder="text…"
+                  placeholder={t('interactive.textPlaceholder')}
                   value={typeValues[n.hid] || ''}
                   onChange={(e) => setTypeValues(prev => ({ ...prev, [n.hid]: e.target.value }))}
                   onKeyDown={(e) => {
@@ -72,7 +74,7 @@ export default function InteractivePanel({ nodes, isOpen, onAction }) {
                   className="action-btn action-type"
                   onClick={() => onAction('type', n.hid, typeValues[n.hid] || '')}
                 >
-                  Type
+                  {t('interactive.type')}
                 </button>
               </span>
             )}
@@ -82,7 +84,7 @@ export default function InteractivePanel({ nodes, isOpen, onAction }) {
                 className="action-btn action-click"
                 onClick={() => onAction('click', n.hid)}
               >
-                Select
+                {t('interactive.select')}
               </button>
             )}
           </div>

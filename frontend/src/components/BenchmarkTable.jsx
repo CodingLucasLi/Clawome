@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { runBenchmark } from '../api'
 
 const INITIAL_BENCHMARKS = [
@@ -75,6 +76,7 @@ function compressionStr(ratio) {
 }
 
 export default function BenchmarkTable() {
+  const { t } = useTranslation()
   const [benchmarks, setBenchmarks] = useState(INITIAL_BENCHMARKS)
   const [running, setRunning] = useState(null)
   const [customUrl, setCustomUrl] = useState('')
@@ -133,19 +135,19 @@ export default function BenchmarkTable() {
   return (
     <div className="benchmark-table-wrap">
       <div className="benchmark-header">
-        <span className="benchmark-title">DOM Compression Benchmarks</span>
-        <span className="benchmark-count">{benchmarks.length} pages tested</span>
+        <span className="benchmark-title">{t('benchmark.tableTitle')}</span>
+        <span className="benchmark-count">{t('benchmark.pagesTested', { count: benchmarks.length })}</span>
       </div>
       <table className="benchmark-table">
         <thead>
           <tr>
-            <th className="bench-page">Page</th>
-            <th className="bench-stars-cell">Web Agent Friendly</th>
-            <th className="bench-num">Raw Tokens</th>
-            <th className="bench-num bench-result-th">After Compressed</th>
-            <th className="bench-num bench-result-th">Token Saving</th>
-            <th className="bench-status bench-result-th">Completeness</th>
-            <th className="bench-action">Test</th>
+            <th className="bench-page">{t('benchmark.page')}</th>
+            <th className="bench-stars-cell">{t('benchmark.webAgentFriendly')}</th>
+            <th className="bench-num">{t('benchmark.rawTokens')}</th>
+            <th className="bench-num bench-result-th">{t('benchmark.afterCompressed')}</th>
+            <th className="bench-num bench-result-th">{t('benchmark.tokenSaving')}</th>
+            <th className="bench-status bench-result-th">{t('benchmark.completeness')}</th>
+            <th className="bench-action">{t('benchmark.test')}</th>
           </tr>
         </thead>
         <tbody>
@@ -181,7 +183,7 @@ export default function BenchmarkTable() {
         <input
           type="text"
           className="bench-custom-input"
-          placeholder="Enter URL to benchmark..."
+          placeholder={t('benchmark.enterUrl')}
           value={customUrl}
           onChange={e => setCustomUrl(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && runCustom()}
@@ -192,7 +194,7 @@ export default function BenchmarkTable() {
           onClick={runCustom}
           disabled={running !== null || !customUrl.trim()}
         >
-          {running === -1 ? 'Testing...' : 'Run Benchmark'}
+          {running === -1 ? t('benchmark.testing') : t('benchmark.runBenchmark')}
         </button>
       </div>
     </div>

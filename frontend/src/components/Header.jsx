@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import { NavLink, Link, useLocation } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { getStatus, getConfig } from '../api'
 import './Header.css'
 
 export default function Header() {
+  const { t, i18n } = useTranslation()
   const [browserOpen, setBrowserOpen] = useState(false)
   const [headless, setHeadless] = useState(false)
-  const location = useLocation()
-  const isHome = location.pathname === '/'
 
   const poll = useCallback(async () => {
     try {
@@ -25,40 +25,49 @@ export default function Header() {
     return () => clearInterval(id)
   }, [poll])
 
+  const toggleLang = () => {
+    const next = i18n.language === 'zh' ? 'en' : 'zh'
+    i18n.changeLanguage(next)
+    localStorage.setItem('lang', next)
+  }
+
   const showHeadlessBanner = headless && browserOpen
 
   return (
-    <header className={`header${isHome ? ' header-home' : ''}`}>
+    <header className="header">
       <Link to="/" className="header-brand">
         <img src="/clawome.png" alt="" className="header-logo" />
         Clawome
       </Link>
       <nav className="header-nav">
         <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Home
+          {t('header.home')}
         </NavLink>
         <NavLink to="/playground" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Playground
+          {t('header.playground')}
         </NavLink>
         <NavLink to="/docs" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Docs
+          {t('header.docs')}
         </NavLink>
         <NavLink to="/benchmark" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Benchmark
+          {t('header.benchmark')}
         </NavLink>
         <NavLink to="/agent" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Agent
+          {t('header.agent')}
         </NavLink>
         <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Settings
+          {t('header.settings')}
         </NavLink>
       </nav>
       {showHeadlessBanner && (
         <Link to="/playground" className="header-headless-badge">
           <span className="header-headless-dot" />
-          Headless browser running
+          {t('header.headlessBanner')}
         </Link>
       )}
+      <button className="header-lang-btn" onClick={toggleLang} title="Switch language">
+        {i18n.language === 'zh' ? 'EN' : '中'}
+      </button>
     </header>
   )
 }

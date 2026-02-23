@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 // Strip ⟨⟩ markers used by the DOM walker for agent consumption
 const clean = (s) => s ? s.replace(/[⟨⟩]/g, '') : ''
 
@@ -6,8 +8,10 @@ const clean = (s) => s ? s.replace(/[⟨⟩]/g, '') : ''
  * including the dom_changes diff (added / removed / changed nodes).
  */
 export default function DomChanges({ result }) {
+  const { t } = useTranslation()
+
   if (!result) {
-    return <div className="panel-placeholder">Execute a Click or Type action to see results here.</div>
+    return <div className="panel-placeholder">{t('domChanges.placeholder')}</div>
   }
 
   const { action, nodeId, text, ts, data, error } = result
@@ -25,7 +29,7 @@ export default function DomChanges({ result }) {
           <span className="dc-action">{actionLabel}</span>
           <span className="dc-time">{time}</span>
         </div>
-        <div className="dc-error">Error: {error}</div>
+        <div className="dc-error">{t('domChanges.error')}: {error}</div>
       </div>
     )
   }
@@ -52,7 +56,7 @@ export default function DomChanges({ result }) {
           {/* Added nodes */}
           {changes.added?.length > 0 && (
             <div className="dc-section">
-              <div className="dc-section-title added">+ Added ({changes.added.length})</div>
+              <div className="dc-section-title added">{t('domChanges.added')} ({changes.added.length})</div>
               {changes.added.map((n, i) => (
                 <div key={i} className="dc-node added">
                   <span className="dc-hid">{n.hid}</span>
@@ -67,7 +71,7 @@ export default function DomChanges({ result }) {
           {/* Removed nodes */}
           {changes.removed?.length > 0 && (
             <div className="dc-section">
-              <div className="dc-section-title removed">− Removed ({changes.removed.length})</div>
+              <div className="dc-section-title removed">{t('domChanges.removed')} ({changes.removed.length})</div>
               {changes.removed.map((n, i) => (
                 <div key={i} className="dc-node removed">
                   <span className="dc-hid">{n.hid}</span>
@@ -81,7 +85,7 @@ export default function DomChanges({ result }) {
           {/* Changed nodes */}
           {changes.changed?.length > 0 && (
             <div className="dc-section">
-              <div className="dc-section-title changed">△ Changed ({changes.changed.length})</div>
+              <div className="dc-section-title changed">{t('domChanges.changed')} ({changes.changed.length})</div>
               {changes.changed.map((n, i) => (
                 <div key={i} className="dc-node changed">
                   <span className="dc-hid">{n.hid}</span>
@@ -98,7 +102,7 @@ export default function DomChanges({ result }) {
           )}
         </>
       ) : (
-        <div className="dc-summary no-changes">No dom_changes in response (action may not support diff yet)</div>
+        <div className="dc-summary no-changes">{t('domChanges.noDomChanges')}</div>
       )}
     </div>
   )

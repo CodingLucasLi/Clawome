@@ -1,4 +1,7 @@
+import { useTranslation } from 'react-i18next'
+
 export default function BrowserTabBar({ tabs, onSwitch, onClose, onNew }) {
+  const { t } = useTranslation()
   if (!tabs || tabs.length === 0) return null
   return (
     <div className="browser-tab-bar">
@@ -9,7 +12,7 @@ export default function BrowserTabBar({ tabs, onSwitch, onClose, onNew }) {
           onClick={() => onSwitch(tab.tab_id)}
           title={tab.url}
         >
-          <span className="browser-tab-title">{tab.title || 'New Tab'}</span>
+          <span className="browser-tab-title">{tab.title || t('tabBar.newTab')}</span>
           {tabs.length > 1 && (
             <span
               className="browser-tab-close"
@@ -20,7 +23,7 @@ export default function BrowserTabBar({ tabs, onSwitch, onClose, onNew }) {
           )}
         </div>
       ))}
-      <button className="browser-tab-new" onClick={onNew} title="New Tab">+</button>
+      <button className="browser-tab-new" onClick={onNew} title={t('tabBar.newTab')}>+</button>
     </div>
   )
 }

@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { DotMatrixBackground } from '../components/DotMatrixBackground'
 import '../components/DotMatrixBackground.css'
 import './HomePage.css'
 
 export default function HomePage() {
+  const { t } = useTranslation()
   return (
     <div className="home-page">
       {/* ── Hero: left intro + right two paths ── */}
@@ -14,18 +16,18 @@ export default function HomePage() {
           <div className="hero-left">
             <div className="hero-brand">
               <img src="/clawome.png" alt="Clawome" className="home-hero-logo" />
-              <h1>Clawome</h1>
+              <h1>{t('home.title')}</h1>
             </div>
             <p className="home-hero-tagline">
-              Browser automation for AI agents.<br />
-              From REST APIs to fully autonomous task execution.
+              {t('home.tagline1')}<br />
+              {t('home.tagline2')}
             </p>
             <div className="hero-actions">
               <Link to="/agent" className="hero-btn hero-btn-primary">
-                Try Task Agent {'\u2192'}
+                {t('home.tryAgent')}
               </Link>
               <Link to="/docs" className="hero-btn hero-btn-ghost">
-                API Docs
+                {t('home.apiDocs')}
               </Link>
             </div>
           </div>
@@ -36,28 +38,28 @@ export default function HomePage() {
             <div className="path-card">
               <div className="path-header">
                 <span className="path-icon">{'</>'}</span>
-                <span className="path-title">REST API</span>
-                <span className="path-tag">Programmatic</span>
+                <span className="path-title">{t('home.restApi')}</span>
+                <span className="path-tag">{t('home.programmatic')}</span>
               </div>
               <div className="path-steps">
                 <div className="path-step">
                   <span className="path-num">1</span>
                   <div>
-                    <span className="path-step-label">Get skill file</span>
+                    <span className="path-step-label">{t('home.getSkillFile')}</span>
                     <a href="/skill" className="path-link" target="_blank" rel="noopener noreferrer">clawome-skill.md</a>
                   </div>
                 </div>
                 <div className="path-step">
                   <span className="path-num">2</span>
                   <div>
-                    <span className="path-step-label">Open & read DOM</span>
+                    <span className="path-step-label">{t('home.openReadDom')}</span>
                     <code className="path-code">POST /open {'\u2192'} GET /dom</code>
                   </div>
                 </div>
                 <div className="path-step">
                   <span className="path-num">3</span>
                   <div>
-                    <span className="path-step-label">Act & loop</span>
+                    <span className="path-step-label">{t('home.actLoop')}</span>
                     <code className="path-code">/click | /type | /scroll {'\u2192'} /dom</code>
                   </div>
                 </div>
@@ -68,29 +70,29 @@ export default function HomePage() {
             <div className="path-card path-card-highlight">
               <div className="path-header">
                 <span className="path-icon">{'\u{1F9E0}'}</span>
-                <span className="path-title">Task Agent</span>
-                <span className="path-tag path-tag-hot">Autonomous</span>
+                <span className="path-title">{t('home.taskAgent')}</span>
+                <span className="path-tag path-tag-hot">{t('home.autonomous')}</span>
               </div>
               <div className="path-steps">
                 <div className="path-step">
                   <span className="path-num">1</span>
                   <div>
-                    <span className="path-step-label">Describe your task</span>
-                    <span className="path-hint">Natural language input</span>
+                    <span className="path-step-label">{t('home.describeTask')}</span>
+                    <span className="path-hint">{t('home.describeHint')}</span>
                   </div>
                 </div>
                 <div className="path-step">
                   <span className="path-num">2</span>
                   <div>
-                    <span className="path-step-label">Agent plans & browses</span>
-                    <span className="path-hint">Auto subtasks, navigation, decisions</span>
+                    <span className="path-step-label">{t('home.agentPlans')}</span>
+                    <span className="path-hint">{t('home.agentHint')}</span>
                   </div>
                 </div>
                 <div className="path-step">
                   <span className="path-num">3</span>
                   <div>
-                    <span className="path-step-label">Get structured results</span>
-                    <span className="path-hint">Findings, links, completion status</span>
+                    <span className="path-step-label">{t('home.getResults')}</span>
+                    <span className="path-hint">{t('home.resultsHint')}</span>
                   </div>
                 </div>
               </div>
@@ -102,38 +104,38 @@ export default function HomePage() {
       {/* ── Pipeline visualization ── */}
       <section className="home-section home-pipeline">
         <div className="section-header">
-          <span className="section-tag">How it works</span>
-          <h2>From task to result in one command</h2>
-          <p className="home-section-sub">The agent autonomously plans, navigates, and delivers.</p>
+          <span className="section-tag">{t('home.howItWorks')}</span>
+          <h2>{t('home.fromTask')}</h2>
+          <p className="home-section-sub">{t('home.agentAuto')}</p>
         </div>
         <div className="pipeline-demo">
           <div className="pipeline-input">
-            <div className="pipeline-prompt-label">Task</div>
-            <div className="pipeline-prompt">"Search Hacker News for the latest AI news and summarize the top 3 stories"</div>
+            <div className="pipeline-prompt-label">{t('home.pipelineTask')}</div>
+            <div className="pipeline-prompt">{t('home.pipelineExample')}</div>
           </div>
           <div className="pipeline-flow">
             <div className="pipeline-step">
               <div className="pipeline-step-icon">{'\u{1F9E0}'}</div>
-              <div className="pipeline-step-label">Plan</div>
-              <div className="pipeline-step-desc">Break into subtasks</div>
+              <div className="pipeline-step-label">{t('home.plan')}</div>
+              <div className="pipeline-step-desc">{t('home.planDesc')}</div>
             </div>
             <div className="pipeline-connector"><span>{'\u2192'}</span></div>
             <div className="pipeline-step">
               <div className="pipeline-step-icon">{'\u{1F310}'}</div>
-              <div className="pipeline-step-label">Browse</div>
-              <div className="pipeline-step-desc">Navigate & interact</div>
+              <div className="pipeline-step-label">{t('home.browse')}</div>
+              <div className="pipeline-step-desc">{t('home.browseDesc')}</div>
             </div>
             <div className="pipeline-connector"><span>{'\u2192'}</span></div>
             <div className="pipeline-step">
               <div className="pipeline-step-icon">{'\u{1F50D}'}</div>
-              <div className="pipeline-step-label">Evaluate</div>
-              <div className="pipeline-step-desc">Check & adapt plan</div>
+              <div className="pipeline-step-label">{t('home.evaluate')}</div>
+              <div className="pipeline-step-desc">{t('home.evaluateDesc')}</div>
             </div>
             <div className="pipeline-connector"><span>{'\u2192'}</span></div>
             <div className="pipeline-step pipeline-step-done">
               <div className="pipeline-step-icon">{'\u2705'}</div>
-              <div className="pipeline-step-label">Result</div>
-              <div className="pipeline-step-desc">Structured output</div>
+              <div className="pipeline-step-label">{t('home.result')}</div>
+              <div className="pipeline-step-desc">{t('home.resultDesc')}</div>
             </div>
           </div>
         </div>
@@ -142,13 +144,13 @@ export default function HomePage() {
       {/* ── DOM Compression ── */}
       <section className="home-section home-comparison">
         <div className="section-header">
-          <span className="section-tag">DOM Compression</span>
-          <h2>What your agent actually sees</h2>
-          <p className="home-section-sub">Raw HTML is noisy. Clawome compresses it to what matters.</p>
+          <span className="section-tag">{t('home.domCompression')}</span>
+          <h2>{t('home.whatAgentSees')}</h2>
+          <p className="home-section-sub">{t('home.rawNoisy')}</p>
         </div>
         <div className="compare-grid">
           <div className="compare-card compare-before">
-            <div className="compare-label">Raw HTML <span className="compare-size">~18,000 tokens</span></div>
+            <div className="compare-label">{t('home.rawHtml')} <span className="compare-size">{t('home.rawTokens')}</span></div>
             <pre className="compare-code">{`<div class="RNNXgb" jsname="RNNXgb"
   jscontroller="NF..." data-hveid="CAE..."
   data-ved="0ahUKEw..." style="...">
@@ -171,7 +173,7 @@ export default function HomePage() {
             <span className="compare-arrow-icon">{'\u2192'}</span>
           </div>
           <div className="compare-card compare-after">
-            <div className="compare-label">Compressed DOM <span className="compare-size">~200 tokens</span></div>
+            <div className="compare-label">{t('home.compressedDom')} <span className="compare-size">{t('home.compressedTokens')}</span></div>
             <pre className="compare-code">{`[1] form(role="search")
   [1.1] textarea(name="q", placeholder="Search")
   [1.2] button: Google Search
@@ -181,44 +183,44 @@ export default function HomePage() {
 [4] a(href): Images`}</pre>
           </div>
         </div>
-        <p className="compare-caption">7 nodes instead of 800. Every node gets a stable hierarchical ID.</p>
+        <p className="compare-caption">{t('home.compareCaption')}</p>
       </section>
 
       {/* ── Features ── */}
       <section className="home-section home-features-section">
         <div className="section-header">
-          <h2>Built for agents</h2>
+          <h2>{t('home.builtForAgents')}</h2>
         </div>
         <div className="home-features">
           <div className="home-feature-card">
             <div className="feature-icon">{'\u{1F9E0}'}</div>
-            <h3>Autonomous execution</h3>
-            <p>LLM-powered agent plans subtasks, browses pages, and adapts in real-time.</p>
+            <h3>{t('home.feat1Title')}</h3>
+            <p>{t('home.feat1Desc')}</p>
           </div>
           <div className="home-feature-card">
             <div className="feature-icon">{'\u26A1'}</div>
-            <h3>80–90% fewer tokens</h3>
-            <p>Strips wrappers, scripts, and noise. Agents see only what matters.</p>
+            <h3>{t('home.feat2Title')}</h3>
+            <p>{t('home.feat2Desc')}</p>
           </div>
           <div className="home-feature-card">
             <div className="feature-icon">{'\u{1F3AF}'}</div>
-            <h3>One-shot targeting</h3>
-            <p>Hierarchical IDs like <code>3.1.4</code> — click any element on the first try.</p>
+            <h3>{t('home.feat3Title')}</h3>
+            <p>{t('home.feat3Desc')}</p>
           </div>
           <div className="home-feature-card">
             <div className="feature-icon">{'\u{1F6E1}'}</div>
-            <h3>Supervisor & recovery</h3>
-            <p>Detects infinite loops, recovers from errors, replans when stuck.</p>
+            <h3>{t('home.feat4Title')}</h3>
+            <p>{t('home.feat4Desc')}</p>
           </div>
           <div className="home-feature-card">
             <div className="feature-icon">{'\u{1F9E9}'}</div>
-            <h3>Per-site compressors</h3>
-            <p>Python scripts auto-activate by URL. Each site gets its own optimizer.</p>
+            <h3>{t('home.feat5Title')}</h3>
+            <p>{t('home.feat5Desc')}</p>
           </div>
           <div className="home-feature-card">
             <div className="feature-icon">{'\u{1F4CA}'}</div>
-            <h3>Real-time observability</h3>
-            <p>Live progress, step visualization, token usage, and cost tracking.</p>
+            <h3>{t('home.feat6Title')}</h3>
+            <p>{t('home.feat6Desc')}</p>
           </div>
         </div>
       </section>
@@ -227,22 +229,22 @@ export default function HomePage() {
       <section className="home-stats-bar">
         <div className="stat-item">
           <div className="stat-number">45+</div>
-          <div className="stat-label">REST APIs</div>
+          <div className="stat-label">{t('home.statApis')}</div>
         </div>
         <div className="stat-divider" />
         <div className="stat-item">
           <div className="stat-number">8</div>
-          <div className="stat-label">Action types</div>
+          <div className="stat-label">{t('home.statActions')}</div>
         </div>
         <div className="stat-divider" />
         <div className="stat-item">
           <div className="stat-number">90%</div>
-          <div className="stat-label">Token savings</div>
+          <div className="stat-label">{t('home.statSaving')}</div>
         </div>
         <div className="stat-divider" />
         <div className="stat-item">
           <div className="stat-number">Auto</div>
-          <div className="stat-label">Task planning</div>
+          <div className="stat-label">{t('home.statPlanning')}</div>
         </div>
       </section>
     </div>
