@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#how-it-works">How It Works</a> &bull;
+  <a href="#features">Features</a> &bull;
   <a href="#api-reference">API Reference</a> &bull;
   <a href="#benchmarks">Benchmarks</a> &bull;
   <a href="#roadmap">Roadmap</a>
@@ -21,22 +21,39 @@
 
 ## The Problem
 
-Raw HTML is **massive** and full of noise. A typical Google Search page has ~300K tokens of HTML, but an AI agent only needs ~3K tokens to understand and interact with it. Sending raw HTML to an LLM wastes tokens, costs money, and often exceeds context limits.
+Raw HTML is **massive** and full of noise. A typical search results page has ~300K tokens of HTML, but an AI agent only needs ~3K tokens to understand and interact with it. Sending raw HTML to an LLM wastes tokens, costs money, and often exceeds context limits.
 
 ## The Solution
 
-Clawome sits between your browser and your AI agent. It compresses the live DOM into a clean, hierarchical tree format that preserves:
+Clawome sits between your browser and your AI agent. It provides two core capabilities:
 
-- All **visible text** content
-- **Interactive elements** (buttons, links, inputs) with click targets
-- **Semantic structure** (headings, lists, tables, forms)
-- **State information** (expanded/collapsed, checked, selected)
+1. **DOM Compression** — Compresses live web pages into clean, structured trees that preserve visible text, interactive elements, and semantic structure while stripping noise (CSS, scripts, ads, hidden elements). 300K tokens → 3K tokens.
 
-While stripping away:
+2. **Task Agent** — An autonomous browser agent that takes a natural language goal, plans subtasks, executes browser actions, and returns structured results with Markdown formatting.
 
-- CSS, scripts, SVG paths, tracking pixels
-- Hidden elements, ad containers, cookie banners
-- Redundant wrappers, empty nodes, duplicate content
+## Features
+
+### DOM Compression
+- **100:1 compression ratio** on typical web pages
+- Preserves all visible text, interactive elements (buttons, links, inputs), and semantic structure
+- Hierarchical node IDs (e.g., `1.2.3`) for precise element targeting
+- Site-specific optimizers for Google, Wikipedia, Stack Overflow, YouTube, etc.
+- Lite mode for even more aggressive token savings
+
+### Task Agent
+- **Natural language tasks** — Describe what you want in plain language
+- **Multi-step planning** — Automatically breaks complex tasks into subtasks
+- **Smart execution** — Perceive → Plan → Act → Sense loop with retry handling
+- **Flow anomaly detection** — Detects loops, stuck states, and error patterns without extra LLM calls
+- **Markdown results** — Final results are formatted in Markdown with structured data
+- **12+ LLM providers** — OpenAI, Anthropic, Google, DeepSeek, DashScope (Qwen), Moonshot, Zhipu, Mistral, Groq, xAI, and more via LiteLLM
+- **Safety constraints** — Browser-only actions, no form submissions unless explicitly asked, hard step limits
+
+### Dashboard
+- **Browser Playground** — Interactive DOM viewer and browser control
+- **Agent UI** — Task input, real-time progress tracking, collapsible step details
+- **Settings** — LLM provider config, browser options, compression settings
+- **API Docs** — Built-in documentation with Chinese/English support
 
 ## Quick Start
 
@@ -44,7 +61,6 @@ While stripping away:
 
 - Python 3.10+
 - Node.js 18+
-- Git
 
 ### 1. Download
 
@@ -64,14 +80,13 @@ cp .env.example .env
 Edit `.env`:
 
 ```bash
-# LLM Provider (required for Task Agent)
-# Currently supports Qwen (Tongyi Qianwen) only. More models coming soon.
-LLM_API_KEY=sk-your-api-key-here
-LLM_API_BASE=https://dashscope.aliyuncs.com/compatible-mode/v1
-LLM_MODEL=qwen3.5-plus
+# LLM Provider — supports 12+ providers via LiteLLM
+LLM_PROVIDER=dashscope          # openai / anthropic / google / deepseek / dashscope / ...
+LLM_API_KEY=sk-your-api-key
+LLM_MODEL=qwen-plus             # Model name for your provider
 ```
 
-> **Note:** The current version only supports **Qwen (Tongyi Qianwen)** as the LLM provider. Support for more models (GPT, Claude, DeepSeek, etc.) is coming soon. The `.env` file is optional if you only use the REST API / DOM compression.
+> The `.env` file is optional if you only use the DOM compression API.
 
 ### 3. One-Command Start
 
@@ -81,14 +96,10 @@ LLM_MODEL=qwen3.5-plus
 # API:        http://localhost:5001
 ```
 
-`start.sh` will automatically:
-- Create a Python virtual environment
-- Install all backend & frontend dependencies
-- Download Chromium via Playwright
-- Load `.env` configuration
-- Start both backend and frontend servers
+`start.sh` will automatically set up the Python virtual environment, install dependencies, download Chromium, and start both servers.
 
-### Manual Setup (Alternative)
+<details>
+<summary>Manual Setup</summary>
 
 ```bash
 # Backend
@@ -105,263 +116,95 @@ npm install
 npm run dev                 # Starts on http://localhost:5173
 ```
 
-## How It Works
-
-```
-Web Page (300K tokens)
-    |
-    v
-Playwright Browser ──── Live DOM ──── JS DOM Walker
-    |                                      |
-    |                                 Raw Nodes (~20K)
-    |                                      |
-    |                              Compressor Pipeline
-    |                                      |
-    |                           ┌──────────┼──────────┐
-    |                      flat_to_tree  simplify  prune_empty
-    |                      collapse_popups  truncate_lists
-    |                           └──────────┼──────────┘
-    |                                      |
-    v                              Compressed Tree (~3K tokens)
-AI Agent  <────────────────────────  REST API
-```
-
-### Compression Pipeline (Default Compressor)
-
-1. **flat_to_tree** - Rebuild DOM hierarchy from flat node list
-2. **simplify** (10 passes) - Collapse single-child wrappers, dedup text, merge inline elements
-3. **collapse_popups** - Fold dialogs/modals into one-line summaries
-4. **truncate_long_lists** - Cap homogeneous lists (show first 10 of 50+)
-5. **prune_empty_leaves** - Remove nodes with no meaningful content
-6. **tree_to_flat** - Output with hierarchical IDs (1.2.3 format)
+</details>
 
 ## API Reference
 
 ### Navigation
 
-| Method | Endpoint | Body | Description |
-|--------|----------|------|-------------|
-| POST | `/api/browser/open` | `{url}` | Open URL (launches browser if needed) |
-| POST | `/api/browser/back` | | Navigate back |
-| POST | `/api/browser/forward` | | Navigate forward |
-| POST | `/api/browser/refresh` | | Reload page |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/browser/open` | Open URL (launches browser if needed) |
+| POST | `/api/browser/back` | Navigate back |
+| POST | `/api/browser/forward` | Navigate forward |
+| POST | `/api/browser/refresh` | Reload page |
 
-### DOM Reading
-
-| Method | Endpoint | Body | Description |
-|--------|----------|------|-------------|
-| GET/POST | `/api/browser/dom` | `{fields?}` | Get compressed DOM tree |
-| POST | `/api/browser/dom/detail` | `{node_id}` | Get element details (rect, attrs) |
-| POST | `/api/browser/text` | `{node_id?}` | Get plain text content |
-| GET | `/api/browser/source` | | Get raw page HTML |
-
-### Interaction
-
-| Method | Endpoint | Body | Description |
-|--------|----------|------|-------------|
-| POST | `/api/browser/click` | `{node_id}` | Click element |
-| POST | `/api/browser/type` | `{node_id, text}` | Type text (keyboard events) |
-| POST | `/api/browser/fill` | `{node_id, text}` | Fill input (fast, no key events) |
-| POST | `/api/browser/select` | `{node_id, value}` | Select dropdown option |
-| POST | `/api/browser/check` | `{node_id, checked?}` | Toggle checkbox |
-| POST | `/api/browser/hover` | `{node_id}` | Hover element |
-| POST | `/api/browser/scroll/down` | `{pixels?}` | Scroll down |
-| POST | `/api/browser/scroll/up` | `{pixels?}` | Scroll up |
-| POST | `/api/browser/keypress` | `{key}` | Press key |
-| POST | `/api/browser/hotkey` | `{keys}` | Press key combo (e.g. "Control+A") |
-
-### Token Optimization
-
-All action endpoints support these optional parameters:
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `refresh_dom` | boolean | `true` | Set `false` to skip DOM refresh after action (saves ~15K tokens per call) |
-| `fields` | string[] | all | Choose which fields to return: `"dom"`, `"interactive"`, `"stats"`, `"xpath_map"` |
-
-**Example: click without DOM refresh (minimal response)**
-```json
-POST /api/browser/click
-{"node_id": "1.2", "refresh_dom": false}
-
-// Response: {"status": "ok", "message": "Clicked [1.2]", "tabs": [...]}
-```
-
-**Example: get only the tree, no interactive list**
-```json
-POST /api/browser/dom
-{"fields": ["dom", "stats"]}
-
-// Response: {"status": "ok", "dom": "...", "stats": {...}}
-```
-
-### Configuration
-
-| Method | Endpoint | Body | Description |
-|--------|----------|------|-------------|
-| GET | `/api/config` | | Get all settings |
-| POST | `/api/config` | `{key: value, ...}` | Update settings |
-| POST | `/api/config/reset` | | Reset to defaults |
-
-### Browser Control
+### DOM
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/browser/status` | Check if browser is open |
-| POST | `/api/browser/close` | Close browser |
-| GET | `/api/browser/screenshot` | Capture screenshot (PNG) |
+| GET/POST | `/api/browser/dom` | Get compressed DOM tree |
+| POST | `/api/browser/dom/detail` | Get element details (rect, attributes) |
+| POST | `/api/browser/text` | Get plain text content of a node |
+| GET | `/api/browser/source` | Get raw page HTML |
 
-## Task Agent (v2.0)
+### Interaction
 
-Clawome v2.0 adds a **Task Agent** that can autonomously browse the web to complete complex tasks. Give it a natural language goal, and it will plan subtasks, execute browser actions, evaluate progress, and return structured results.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/browser/click` | Click element |
+| POST | `/api/browser/type` | Type text (keyboard events) |
+| POST | `/api/browser/fill` | Fill input field |
+| POST | `/api/browser/select` | Select dropdown option |
+| POST | `/api/browser/check` | Toggle checkbox |
+| POST | `/api/browser/hover` | Hover element |
+| POST | `/api/browser/scroll/down` | Scroll down |
+| POST | `/api/browser/scroll/up` | Scroll up |
+| POST | `/api/browser/keypress` | Press key |
+| POST | `/api/browser/hotkey` | Press key combo |
 
-> **Note:** The current version only supports **Qwen (Tongyi Qianwen)** as the LLM provider. Support for more models (GPT, Claude, DeepSeek, etc.) is coming soon.
+### Task Agent
 
-### How It Works
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/agent/start` | Start a new task |
+| GET | `/api/agent/status` | Poll task progress |
+| POST | `/api/agent/stop` | Cancel running task |
 
-```
-User: "Find AI-related programs at NYU Tandon"
-    |
-    v
-Main Planner (LLM)  ─── Decompose into subtasks
-    |
-    v
-Executor Loop:
-    Read DOM → LLM decides action → Execute → Log
-    |                                          |
-    +── Supervisor (every 5 steps, anomaly check)
-    +── Evaluator (per subtask completion)
-    |
-    v
-Final Review (LLM) ─── Verify all requirements met
-    |                          |
-    v                     (not satisfied)
-Summary + Result            Replan → More subtasks
-```
+### Token Optimization
 
-### Agent API
+All action endpoints support optional parameters to reduce response size:
 
-| Method | Endpoint | Body | Description |
-|--------|----------|------|-------------|
-| POST | `/api/agent/start` | `{task}` | Start a new task |
-| GET | `/api/agent/status` | | Poll task progress (subtasks, steps, LLM usage) |
-| POST | `/api/agent/stop` | | Cancel running task |
-
-### Agent Configuration
-
-Configure in the Settings UI under "Agent" tab:
-
-| Setting | Description |
-|---------|-------------|
-| API Key | LLM provider API key |
-| API Base URL | LLM provider endpoint (OpenAI-compatible) |
-| Model Name | Model to use (currently Qwen only, e.g. `qwen3.5-plus`) |
-
-### Workflow Nodes
-
-| Node | Role | Trigger |
-|------|------|---------|
-| `main_planner` | Decompose task into numbered subtasks | Once at start |
-| `step_exec` | Execute single browser action via LLM | Every step |
-| `supervisor` | Detect execution anomalies (loops, stuck) | Every 5 steps |
-| `page_doctor` | Diagnose and fix page loading issues | On errors |
-| `evaluate` | Assess subtask completion, extract findings | On subtask done |
-| `final_check` | Verify all requirements satisfied | After all subtasks |
-| `replan` | Add supplementary subtasks if incomplete | On review failure |
-| `summary` | Aggregate results and statistics | On success |
-
-### Safety Constraints
-
-- **Browser-only**: Agent can only perform web browsing actions (no phone calls, emails, file downloads)
-- **Form guard**: Can fill forms but never submits unless the user explicitly asks
-- **Contact extraction**: Extracts and reports phone/email info instead of attempting to use them
-- **Hard limit**: `recursion_limit=150` as safety net against runaway execution
+- `refresh_dom: false` — Skip DOM refresh after action (saves tokens)
+- `fields: ["dom", "stats"]` — Return only selected fields
 
 ## Benchmarks
 
-| Page | Raw HTML Tokens | Compressed Tokens | Savings | Completeness |
-|------|---------------:|------------------:|--------:|:------------:|
-| Google Homepage | 51,155 | 238 | 99.5% | 100.0% |
-| Google Search | 298,262 | 2,866 | 99.0% | 100.0% |
-| Wikipedia Article | 225,525 | 40,444 | 82.1% | 99.7% |
-| Harvard Alumni | 177,793 | 31,658 | 82.2% | 99.7% |
-| Baidu Homepage | 192,945 | 457 | 99.8% | 100.0% |
-| Baidu Search | 390,249 | 4,960 | 98.7% | 100.0% |
+| Page | Raw HTML | Compressed | Savings | Completeness |
+|------|--------:|-----------:|--------:|:------------:|
+| Google Homepage | 51K | 238 | 99.5% | 100% |
+| Google Search | 298K | 2,866 | 99.0% | 100% |
+| Wikipedia Article | 225K | 40K | 82.1% | 99.7% |
+| Baidu Homepage | 192K | 457 | 99.8% | 100% |
+| Baidu Search | 390K | 4,960 | 98.7% | 100% |
 
-> **Completeness** = percentage of visible text on the page that is preserved in the compressed tree.
+> **Completeness** = percentage of visible text preserved in the compressed tree.
 
-## Architecture
+## Supported LLM Providers
 
-```
-clawome/
-├── backend/                     # Python Flask API
-│   ├── app.py                   # REST API endpoints
-│   ├── agent_routes.py          # Task Agent API endpoints
-│   ├── browser_manager.py       # Playwright browser control
-│   ├── compressor_manager.py    # Script management
-│   ├── config.py                # Configuration system
-│   ├── dom_walker.js            # In-browser DOM walking
-│   ├── compressors/             # Compression scripts
-│   │   ├── default.py           # Core compressor (always active)
-│   │   ├── google_search.py     # Google Search results optimizer
-│   │   ├── wikipedia.py         # Wikipedia article optimizer
-│   │   ├── stackoverflow.py     # Stack Overflow Q&A optimizer
-│   │   └── youtube.py           # YouTube page optimizer
-│   ├── task_agent/              # LangGraph-based Task Agent (v2.0)
-│   │   ├── runner.py            # Background thread execution + cancellation
-│   │   ├── run_context.py       # Per-run log directory + cancellation flag
-│   │   ├── agent_config/        # Agent settings (LLM, intervals)
-│   │   ├── models/              # Pydantic schemas (AgentState, Task, Memory)
-│   │   ├── nodes/               # Workflow nodes (planner, executor, evaluator...)
-│   │   ├── workflows/           # LangGraph workflow definition
-│   │   ├── browser/             # Browser API adapter
-│   │   ├── llm/                 # LLM provider abstraction
-│   │   └── utils/               # JSON extraction, logging
-│   └── skill/                   # MCP skill documentation
-├── frontend/                    # React + Vite dashboard
-│   ├── src/pages/               # Settings, Playground, Agent, Docs
-│   └── src/components/          # UI components
-└── docs/                        # Docusaurus documentation
-```
-
-## Pluggable Compressor Scripts
-
-Clawome supports custom compression scripts for site-specific optimization:
-
-```python
-# backend/compressors/my_script.py
-SCRIPT_ID = "my_site"
-SCRIPT_VERSION = "1.0.0"
-URL_PATTERNS = ["*mysite.com*"]
-SETTINGS_SCHEMA = {
-    "max_items": {"type": "number", "default": 20, "label": "Max items to show"}
-}
-
-def process(dom_nodes, settings=None):
-    """Filter and transform DOM nodes."""
-    max_items = (settings or {}).get("max_items", 20)
-    # Your custom logic here
-    return dom_nodes
-```
-
-The default compressor handles all pages. Site-specific scripts can be enabled in Settings to provide deeper optimization for specific websites.
-
-## Configuration
-
-Key settings (all configurable via UI or API):
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `headless` | `false` | Run browser without visible window. Note: some websites detect headless browsers and may block or return empty pages. |
-| `max_nodes` | `20000` | Maximum DOM nodes to process |
-| `max_depth` | `50` | Maximum DOM tree depth |
-| `nav_timeout` | `15000` | Navigation timeout (ms) |
-| `benchmark_timeout` | `30000` | Benchmark page load timeout (ms) |
+| Provider | Model Examples |
+|----------|---------------|
+| DashScope (Qwen) | qwen-plus, qwen-max, qwen3.5-plus |
+| OpenAI | gpt-4o, gpt-4o-mini |
+| Anthropic | claude-sonnet-4-20250514, claude-haiku |
+| Google | gemini-2.0-flash, gemini-pro |
+| DeepSeek | deepseek-chat, deepseek-reasoner |
+| Mistral | mistral-large-latest |
+| Groq | llama-3.1-70b |
+| xAI | grok-2 |
+| Moonshot | moonshot-v1-8k |
+| Zhipu | glm-4 |
+| Custom | Any OpenAI-compatible endpoint |
 
 ## Roadmap
 
-- [x] **v1.0** - DOM compression API with pluggable scripts
-- [x] **v2.0** - Task Agent with LangGraph workflow: multi-step planning, browser automation, supervisor monitoring, progress evaluation, and auto-replan
+- [x] DOM compression API with pluggable site-specific scripts
+- [x] Task Agent with multi-step planning and autonomous browsing
+- [x] Multi-provider LLM support (12+ providers)
+- [x] Chinese/English bilingual dashboard
+- [ ] MCP (Model Context Protocol) server integration
+- [ ] Visual grounding — screenshot-based element location
+- [ ] Multi-agent collaboration
 
 ## Third-Party Libraries
 
@@ -370,10 +213,9 @@ Key settings (all configurable via UI or API):
 | [Playwright](https://github.com/microsoft/playwright) | Apache 2.0 | Browser automation |
 | [Flask](https://github.com/pallets/flask) | BSD 3-Clause | REST API server |
 | [React](https://github.com/facebook/react) | MIT | Frontend UI |
-| [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/) | MIT | HTML parsing (fallback) |
-| [LangGraph](https://github.com/langchain-ai/langgraph) | MIT | Task Agent workflow engine |
-| [LangChain](https://github.com/langchain-ai/langchain) | MIT | LLM provider abstraction |
-| [Pydantic](https://github.com/pydantic/pydantic) | MIT | Schema validation for agent state |
+| [LangGraph](https://github.com/langchain-ai/langgraph) | MIT | Agent workflow engine |
+| [LiteLLM](https://github.com/BerriAI/litellm) | MIT | Multi-provider LLM routing |
+| [Pydantic](https://github.com/pydantic/pydantic) | MIT | Schema validation |
 
 ## License
 
