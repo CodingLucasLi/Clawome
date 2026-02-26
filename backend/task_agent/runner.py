@@ -138,8 +138,12 @@ def _validate_config():
 
 # ── Public API ────────────────────────────────────────────────────────
 
-def start_task(description):
+def start_task(description, max_steps=None):
     """Start a new task in a background thread.
+
+    Args:
+        description: Natural language task description.
+        max_steps: Override max steps for this task (default: use settings).
 
     Returns {"task_id": "...", "status": "started"} on success,
     or {"error": "...", "error_code": "..."} if something is wrong.
@@ -147,8 +151,12 @@ def start_task(description):
     global _current_task_id, _running, _thread, _current_status, _task_id_counter, _start_time
 
     # Pre-flight: reload settings from Browser3 config and validate
-    from agent_config.settings import reload_settings
+    from agent_config.settings import reload_settings, settings
     reload_settings()
+
+    # Apply per-request override
+    if max_steps is not None:
+        settings.agent.max_steps = int(max_steps)
 
     config_err = _validate_config()
     if config_err:

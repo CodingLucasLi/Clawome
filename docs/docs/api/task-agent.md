@@ -33,9 +33,17 @@ POST /api/agent/start
 
 ```json
 {
-  "description": "Find AI-related graduate programs at NYU Tandon School of Engineering"
+  "description": "Find AI-related graduate programs at NYU Tandon School of Engineering",
+  "max_steps": 30
 }
 ```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `task` or `description` | string | Yes | Natural language task description |
+| `max_steps` | number | No | Override step limit for this task (default: 15) |
 
 **Response:**
 

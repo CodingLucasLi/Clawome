@@ -16,7 +16,7 @@ def start():
     from task_agent.runner import start_task
 
     body = request.get_json(force=True, silent=True) or {}
-    description = body.get('task', '').strip()
+    description = (body.get('task') or body.get('description', '')).strip()
     if not description:
         return jsonify({
             "status": "error",
@@ -24,7 +24,10 @@ def start():
             "message": "task description is required",
         }), 400
 
-    result = start_task(description)
+    # Optional overrides
+    max_steps = body.get('max_steps')
+
+    result = start_task(description, max_steps=max_steps)
     if "error" in result:
         # Determine HTTP status: 409 for "already running", 400 for config issues
         code = 409 if result.get("error_code") == "task_running" else 400

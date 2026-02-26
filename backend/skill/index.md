@@ -1,22 +1,61 @@
 # Clawome — Browser Skill
 
-Clawome is a browser service built for AI agents. It runs a real Chromium browser and gives you REST APIs to navigate any website, read a compressed DOM that strips away noise so you can precisely understand page content, and interact with elements — all optimized for minimal tokens and maximum accuracy.
+Clawome is a browser service built for AI agents. Give it a natural language task and it autonomously browses the web and returns structured results. You can also use the low-level Browser APIs to control the browser yourself.
 
 Base URL: {{BASE_URL}}/api
 
 ---
 
-## API Documentation
+## Task Agent (Recommended)
 
-Full endpoint details with request/response examples:
+One API call to complete any web task. The agent plans subtasks, controls the browser, reads pages, and returns results — all autonomously.
 
-- [Core APIs — core.md](/skill/core.md) — Navigation, DOM reading, interaction, scrolling, keyboard, Task Agent (24 endpoints)
-- [Manage APIs — manage.md](/skill/manage.md) — Tabs, screenshot, file upload/download, page state, browser control (14 endpoints)
-- [Customize APIs — customize.md](/skill/customize.md) — Compressor scripts, configuration (8 endpoints)
+### Start a task
+
+  POST {{BASE_URL}}/api/agent/start
+  Body: {"task": "Find the top 3 AI news on Hacker News and summarize them", "max_steps": 30}
+
+- `task` (string, required) — Natural language task description.
+- `max_steps` (number, optional) — Override step limit (default: 15). Use 30+ for complex multi-page tasks.
+
+Response: `{"status": "ok", "task_id": "1", "status": "started"}`
+
+### Poll progress
+
+  GET {{BASE_URL}}/api/agent/status
+
+Response includes: `status`, `subtasks`, `steps`, `final_result`, `llm_usage`.
+
+Status values: `idle` → `starting` → `running` → `completed` / `failed` / `cancelled`
+
+### Cancel task
+
+  POST {{BASE_URL}}/api/agent/stop
+
+### Tips for writing tasks
+
+Good tasks are specific:
+- Give a URL — don't let the agent guess where to go
+- Specify what to extract — "top 5 news" is better than "all news"
+- Complex tasks → increase max_steps or split into smaller tasks
+
+Examples:
+- Bad:  "打开深圳大学网站看看有什么内容"
+- Good: "打开 https://www.szu.edu.cn 首页，提取导航栏、最新3条新闻和通知公告"
 
 ---
 
-## Quick Start
+## Browser APIs (Low-Level)
+
+If you prefer to control the browser yourself step by step, use these APIs directly.
+
+Full endpoint details with request/response examples:
+
+- [Core APIs — core.md](/skill/core.md) — Navigation, DOM reading, interaction, scrolling, keyboard (24 endpoints)
+- [Manage APIs — manage.md](/skill/manage.md) — Tabs, screenshot, file upload/download, page state, browser control (14 endpoints)
+- [Customize APIs — customize.md](/skill/customize.md) — Compressor scripts, configuration (8 endpoints)
+
+### Quick Start
 
 Step 1 — Open a browser:
 
@@ -53,9 +92,7 @@ Read page → Decide → Act → Read again. When finished:
 
   curl -X POST {{BASE_URL}}/api/browser/close
 
----
-
-## Quick Reference
+### Quick Reference
 
   Open a page                POST /browser/open {"url":"..."}
   Read the page              GET  /browser/dom

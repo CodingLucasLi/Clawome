@@ -1,8 +1,98 @@
-# Core APIs — Browse & Understand
-
-> Navigate pages, read compressed DOM, interact with elements, scroll, and press keys.
+# Core APIs
 
 **Related:** [skill.md](/skill) — Overview | [manage.md](/skill/manage.md) — Tabs, screenshots, state | [customize.md](/skill/customize.md) — Compressors & config
+
+---
+
+# Task Agent (Recommended)
+
+> One API call to complete any web task. The agent autonomously plans, browses, and returns structured results.
+
+**Base URL:** `{{BASE_URL}}/api/agent`
+
+## POST /start
+
+Start a new autonomous task. The agent runs in the background.
+
+**Body:**
+```json
+{"task": "Search Hacker News for the latest AI news and summarize top 3 stories", "max_steps": 30}
+```
+
+**Parameters:**
+- `task` or `description` (string, required) — Natural language task description.
+- `max_steps` (number, optional) — Override step limit for this task (default: 15). Use 30+ for complex multi-page tasks.
+
+**Response:**
+```json
+{"status": "ok", "task_id": "1", "status": "started"}
+```
+
+**Errors:**
+- `409` — A task is already running (`error_code: "task_running"`)
+- `400` — Missing task description or LLM not configured
+
+---
+
+## GET /status
+
+Poll current task progress. Returns subtasks, steps, and LLM usage.
+
+**Response (running):**
+```json
+{
+  "status": "running",
+  "task": "Search Hacker News for AI news...",
+  "subtasks": [
+    {"step": 1, "goal": "Navigate to Hacker News", "status": "completed", "result": "..."},
+    {"step": 2, "goal": "Find AI-related posts", "status": "running"}
+  ],
+  "steps": [...],
+  "llm_usage": {
+    "calls": 12,
+    "input_tokens": 25000,
+    "output_tokens": 3000,
+    "total_tokens": 28000
+  }
+}
+```
+
+**Response (completed):**
+```json
+{
+  "status": "completed",
+  "final_result": "Top 3 AI stories: ...",
+  "subtasks": [...],
+  "llm_usage": {...}
+}
+```
+
+**Status values:** `idle` → `starting` → `running` → `completed` / `failed` / `cancelled`
+
+---
+
+## POST /stop
+
+Cancel the currently running task.
+
+**Response:**
+```json
+{"status": "cancelled"}
+```
+
+---
+
+## Tips for writing tasks
+
+- Give a URL — don't let the agent guess where to go
+- Specify what to extract — "top 5 news" is better than "all news"
+- Complex tasks → set `max_steps` higher or split into smaller tasks
+
+---
+
+# Browser APIs (Low-Level)
+
+> Navigate pages, read compressed DOM, interact with elements, scroll, and press keys. Used internally by the Task Agent — also available for direct use.
 
 **Base URL:** `{{BASE_URL}}/api/browser`
 
@@ -532,73 +622,3 @@ Press a key combination (e.g., Ctrl+A, Command+C).
 
 **Note:** Use `Meta` for Command key on macOS, `Control` for Ctrl on Windows/Linux.
 
----
-
-# Task Agent
-
-> Autonomous browser agent. Give it a natural language task — it plans, browses, evaluates, and returns results.
-> Currently supports Qwen (Tongyi Qianwen) only. More models coming soon.
-
-**Base URL:** `{{BASE_URL}}/api/agent`
-
-## POST /start
-
-Start a new autonomous task. The agent runs in the background.
-
-**Body:**
-```json
-{"task": "Search Hacker News for the latest AI news and summarize top 3 stories"}
-```
-
-- `task` (string, required) — Natural language task description.
-
-**Response:**
-```json
-{"status": "ok", "message": "Task started"}
-```
-
-**Errors:**
-- `409` — A task is already running (`error_code: "task_running"`)
-- `400` — Missing task description or LLM not configured
-
----
-
-## GET /status
-
-Poll current task progress. Returns subtasks, steps, and LLM usage.
-
-**Response (running):**
-```json
-{
-  "running": true,
-  "task": "Search Hacker News for AI news...",
-  "subtasks": [
-    {"id": 1, "description": "Navigate to Hacker News", "status": "completed", "result": "..."},
-    {"id": 2, "description": "Find AI-related posts", "status": "in_progress", "result": null}
-  ],
-  "current_subtask": 2,
-  "steps": [...],
-  "llm_usage": {
-    "total_calls": 12,
-    "total_input_tokens": 45000,
-    "total_output_tokens": 3200,
-    "total_cost": 0.015
-  }
-}
-```
-
-**Response (idle):**
-```json
-{"running": false, "task": null, "subtasks": [], "steps": []}
-```
-
----
-
-## POST /stop
-
-Cancel the currently running task.
-
-**Response:**
-```json
-{"status": "ok", "message": "Task cancelled"}
-```

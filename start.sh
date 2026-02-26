@@ -26,11 +26,16 @@ fi
 
 source venv/bin/activate
 
-echo "[backend] Installing dependencies..."
-pip install -q -r requirements.txt
-
-# Install Playwright browser (only downloads if not already installed)
-python -m playwright install chromium 2>/dev/null || echo "[backend] Playwright chromium already installed"
+# Install dependencies only on first run (or if requirements change)
+if [ ! -f "venv/.deps_installed" ] || [ requirements.txt -nt "venv/.deps_installed" ]; then
+  echo "[backend] Installing dependencies..."
+  pip install -q -r requirements.txt
+  # Install Playwright browser
+  python -m playwright install chromium 2>/dev/null || echo "[backend] Playwright chromium already installed"
+  touch "venv/.deps_installed"
+else
+  echo "[backend] Dependencies already installed, skipping."
+fi
 
 echo "[backend] Starting Flask API on http://localhost:5001"
 python app.py &

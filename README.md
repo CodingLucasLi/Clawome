@@ -5,49 +5,130 @@
 <h1 align="center">Clawome</h1>
 
 <p align="center">
-  <strong>DOM Compressor + Task Agent for AI Agents</strong><br/>
-  Turn 300K-token web pages into 3K-token structured trees, and let AI agents autonomously browse the web.
+  <strong>One API call. Any web task. Done.</strong><br/>
+  Give your AI agent a natural language goal — Clawome plans, browses, and returns structured results.
 </p>
 
 <p align="center">
+  <a href="#task-agent-api">Task Agent API</a> &bull;
   <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#features">Features</a> &bull;
-  <a href="#api-reference">API Reference</a> &bull;
+  <a href="#dom-compression">DOM Compression</a> &bull;
   <a href="#benchmarks">Benchmarks</a> &bull;
   <a href="#roadmap">Roadmap</a>
 </p>
 
 ---
 
-## The Problem
+## Task Agent API
 
-Raw HTML is **massive** and full of noise. A typical search results page has ~300K tokens of HTML, but an AI agent only needs ~3K tokens to understand and interact with it. Sending raw HTML to an LLM wastes tokens, costs money, and often exceeds context limits.
+One POST request. Clawome handles the rest — planning subtasks, controlling the browser, reading pages, and returning results.
 
-## The Solution
+```bash
+curl -X POST http://localhost:5001/api/agent/start \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Find AI-related graduate programs at NYU Tandon School of Engineering"}'
+```
 
-Clawome sits between your browser and your AI agent. It provides two core capabilities:
+Poll progress:
 
-1. **DOM Compression** — Compresses live web pages into clean, structured trees that preserve visible text, interactive elements, and semantic structure while stripping noise (CSS, scripts, ads, hidden elements). 300K tokens → 3K tokens.
+```bash
+curl http://localhost:5001/api/agent/status
+```
 
-2. **Task Agent** — An autonomous browser agent that takes a natural language goal, plans subtasks, executes browser actions, and returns structured results with Markdown formatting.
+```json
+{
+  "status": "completed",
+  "final_result": "NYU Tandon offers these AI-related programs: ...",
+  "subtasks": [
+    {"step": 1, "goal": "Visit NYU Tandon website", "status": "completed"},
+    {"step": 2, "goal": "Extract program list", "status": "completed"}
+  ],
+  "llm_usage": {"calls": 12, "input_tokens": 25000, "total_tokens": 28000}
+}
+```
 
-## Features
+Cancel if needed:
 
-### DOM Compression
+```bash
+curl -X POST http://localhost:5001/api/agent/stop
+```
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/agent/start` | Submit a task (natural language) |
+| GET | `/api/agent/status` | Poll progress, subtasks, and results |
+| POST | `/api/agent/stop` | Cancel running task |
+
+**Start parameters:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `task` | string | Task description (required) |
+| `max_steps` | number | Override step limit for this task (default: 15) |
+
+**Status values:** `idle` → `starting` → `running` → `completed` / `failed` / `cancelled`
+
+### Tips for Writing Tasks
+
+```
+Bad:  "打开深圳大学网站看看有什么内容"
+Good: "打开 https://www.szu.edu.cn 首页，提取导航栏、最新3条新闻和通知公告"
+```
+
+- **Give a URL** — avoid letting the agent guess where to go
+- **Specify what to extract** — "top 5 news" is better than "all news"
+- **Complex tasks? Increase steps** — `"max_steps": 30` for multi-page tasks
+- **Or split into smaller tasks** — each task focused on one page or one goal
+
+### How It Works
+
+```
+Your API call → Task Agent → Plan subtasks → Execute browser actions → Return results
+                                  ↑                                        |
+                                  └── evaluate & replan if needed ─────────┘
+```
+
+The agent uses a LangGraph state machine internally: perceive page → plan next step → execute action → sense result → repeat until done.
+
+### Features
+- **Natural language tasks** — Describe what you want in plain language
+- **Multi-step planning** — Automatically breaks complex tasks into subtasks
+- **Smart execution** — Perceive → Plan → Act → Sense loop with retry and anomaly detection
+- **Markdown results** — Final results formatted in Markdown with structured data
+- **12+ LLM providers** — OpenAI, Anthropic, Google, DeepSeek, DashScope, Moonshot, Zhipu, Mistral, Groq, xAI, and more
+- **Safety constraints** — Browser-only actions, hard step limits
+
+---
+
+## DOM Compression
+
+Under the hood, the Task Agent sees web pages through Clawome's DOM compressor — turning 300K tokens of raw HTML into ~3K tokens of clean, structured trees.
+
+**You can also use this directly** as a standalone API for your own agents:
+
+```bash
+# Open a page
+curl -X POST http://localhost:5001/api/browser/open \
+  -d '{"url": "https://www.google.com"}'
+
+# Read compressed DOM
+curl http://localhost:5001/api/browser/dom
+```
+
+```
+[1] form(role="search")
+  [1.1] textarea(name="q", placeholder="Search")
+  [1.2] button: Google Search
+  [1.3] button: I'm Feeling Lucky
+[2] a(href): About
+[3] a(href): Gmail
+```
+
 - **100:1 compression ratio** on typical web pages
-- Preserves all visible text, interactive elements (buttons, links, inputs), and semantic structure
+- Preserves visible text, interactive elements, and semantic structure
 - Hierarchical node IDs (e.g., `1.2.3`) for precise element targeting
 - Site-specific optimizers for Google, Wikipedia, Stack Overflow, YouTube, etc.
 - Lite mode for even more aggressive token savings
-
-### Task Agent
-- **Natural language tasks** — Describe what you want in plain language
-- **Multi-step planning** — Automatically breaks complex tasks into subtasks
-- **Smart execution** — Perceive → Plan → Act → Sense loop with retry handling
-- **Flow anomaly detection** — Detects loops, stuck states, and error patterns without extra LLM calls
-- **Markdown results** — Final results are formatted in Markdown with structured data
-- **12+ LLM providers** — OpenAI, Anthropic, Google, DeepSeek, DashScope (Qwen), Moonshot, Zhipu, Mistral, Groq, xAI, and more via LiteLLM
-- **Safety constraints** — Browser-only actions, no form submissions unless explicitly asked, hard step limits
 
 ### Dashboard
 - **Browser Playground** — Interactive DOM viewer and browser control
@@ -57,49 +138,36 @@ Clawome sits between your browser and your AI agent. It provides two core capabi
 
 ## Quick Start
 
-### Prerequisites
-
-- Python 3.10+
-- Node.js 18+
-
-### 1. Download
+**Prerequisites:** Python 3.10+ / Node.js 18+
 
 ```bash
 git clone https://github.com/CodingLucasLi/Clawome.git
 cd Clawome
+cp .env.example .env       # Fill in your LLM API key
+./start.sh                 # That's it!
 ```
 
-### 2. Environment Configuration
+First run automatically sets up venv, installs dependencies, and downloads Chromium. Subsequent runs skip installation and start instantly.
 
-Copy the example environment file and fill in your LLM credentials (required for Task Agent):
-
-```bash
-cp .env.example .env
+```
+Dashboard:  http://localhost:5173
+API:        http://localhost:5001
 ```
 
-Edit `.env`:
-
-```bash
-# LLM Provider — supports 12+ providers via LiteLLM
-LLM_PROVIDER=dashscope          # openai / anthropic / google / deepseek / dashscope / ...
-LLM_API_KEY=sk-your-api-key
-LLM_MODEL=qwen-plus             # Model name for your provider
-```
-
-> The `.env` file is optional if you only use the DOM compression API.
-
-### 3. One-Command Start
-
-```bash
-./start.sh
-# Dashboard:  http://localhost:5173
-# API:        http://localhost:5001
-```
-
-`start.sh` will automatically set up the Python virtual environment, install dependencies, download Chromium, and start both servers.
+> `.env` is optional if you only use the DOM compression API.
 
 <details>
-<summary>Manual Setup</summary>
+<summary><strong>Start backend or frontend separately</strong></summary>
+
+```bash
+./start-backend.sh         # Only API server → http://localhost:5001
+./start-frontend.sh        # Only Dashboard  → http://localhost:5173
+```
+
+</details>
+
+<details>
+<summary><strong>Manual setup</strong></summary>
 
 ```bash
 # Backend
@@ -108,17 +176,20 @@ python -m venv venv
 source venv/bin/activate    # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 playwright install chromium
-python app.py               # Starts on http://localhost:5001
+python app.py               # http://localhost:5001
 
 # Frontend (in another terminal)
 cd frontend
 npm install
-npm run dev                 # Starts on http://localhost:5173
+npm run dev                 # http://localhost:5173
 ```
 
 </details>
 
-## API Reference
+## Full API Reference
+
+<details>
+<summary><strong>Browser APIs</strong> — Navigation, DOM, Interaction (used internally by Task Agent, also available standalone)</summary>
 
 ### Navigation
 
@@ -153,20 +224,14 @@ npm run dev                 # Starts on http://localhost:5173
 | POST | `/api/browser/keypress` | Press key |
 | POST | `/api/browser/hotkey` | Press key combo |
 
-### Task Agent
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/agent/start` | Start a new task |
-| GET | `/api/agent/status` | Poll task progress |
-| POST | `/api/agent/stop` | Cancel running task |
-
 ### Token Optimization
 
 All action endpoints support optional parameters to reduce response size:
 
 - `refresh_dom: false` — Skip DOM refresh after action (saves tokens)
 - `fields: ["dom", "stats"]` — Return only selected fields
+
+</details>
 
 ## Benchmarks
 
