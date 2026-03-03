@@ -29,11 +29,34 @@ _HAS_FRONTEND = _FRONTEND_DIST is not None
 app = Flask(__name__, static_folder=_FRONTEND_DIST if _HAS_FRONTEND else None, static_url_path="" if _HAS_FRONTEND else None)
 CORS(app)
 
-# Task Agent API (LangGraph workflow)
-from agent_routes import agent_bp
-app.register_blueprint(agent_bp)
+# Chat Agent API (orchestrator layer)
+from routes.chat import chat_bp
+app.register_blueprint(chat_bp)
 
-manager = BrowserManager()
+class _PlaywrightThreadProxy:
+    """Proxy that dispatches all BrowserManager method calls to its Playwright thread.
+
+    Playwright sync_api binds its event loop to the creating thread.  Flask's
+    threaded=True serves each request on a different thread.  This proxy
+    ensures every manager.xxx() call runs on the single Playwright worker
+    thread, preventing "cannot switch to a different thread" errors.
+    """
+
+    def __init__(self, target: BrowserManager):
+        # Use object.__setattr__ to avoid recursion with __getattr__
+        object.__setattr__(self, '_target', target)
+
+    def __getattr__(self, name):
+        attr = getattr(self._target, name)
+        if not callable(attr) or name.startswith('_'):
+            return attr
+
+        def wrapper(*args, **kwargs):
+            return self._target._on_pw_thread(attr, *args, **kwargs)
+        return wrapper
+
+
+manager = _PlaywrightThreadProxy(BrowserManager())
 
 
 def _body():
@@ -534,6 +557,22 @@ def api_wait_for():
 
 
 # ======================================================================
+# 36b  JavaScript Execution
+# ======================================================================
+
+@app.route("/api/browser/execute-js", methods=["POST"])
+def api_execute_js():
+    body = _body()
+    script = body.get("script", "")
+    if not script:
+        return _err("script is required")
+    try:
+        return jsonify(manager.execute_js(script, refresh_dom=_rd(body), fields=_fields(body)))
+    except Exception as e:
+        return _err(str(e))
+
+
+# ======================================================================
 # 37  Browser Control
 # ======================================================================
 
@@ -803,4 +842,7 @@ if _HAS_FRONTEND:
 
 if __name__ == "__main__":
     _PORT = 5001
-    app.run(debug=True, port=_PORT, threaded=False)
+    import threading
+    from task_agent.chat.orchestrator import warmup
+    threading.Thread(target=warmup, daemon=True).start()
+    app.run(debug=True, port=_PORT, threaded=True)

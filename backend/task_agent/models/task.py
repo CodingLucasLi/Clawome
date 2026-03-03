@@ -59,6 +59,13 @@ class SupervisorLog(BaseModel):
     details: str = ""                   # Specific intervention details
 
 
+class UserInjection(BaseModel):
+    """User-injected command or suggestion during task execution."""
+    content: str                        # The user's command/suggestion text
+    timestamp: str = ""                 # HH:MM:SS when injected
+    consumed: bool = False              # True after the planner/decision has seen it
+
+
 class Task(BaseModel):
     """Main task model."""
     description: str = ""
@@ -68,10 +75,31 @@ class Task(BaseModel):
     steps: list[Step] = Field(default_factory=list)
     evaluations: list[Evaluation] = Field(default_factory=list)
     supervisor_logs: list[SupervisorLog] = Field(default_factory=list)
+    user_injections: list[UserInjection] = Field(default_factory=list)
     current_subtask: int = 0            # Step number of the currently executing subtask
     final_result: str = ""              # Set by summary_node when task is satisfied
     created_at: str = ""
     updated_at: str = ""
+    memory_snapshot: dict = Field(default_factory=dict)  # Serialized TaskMemory for dashboard
+
+    def update_memory_snapshot(self, memory) -> None:
+        """Update memory_snapshot from AgentState.memory for dashboard serialization."""
+        if hasattr(memory, 'pages') and hasattr(memory, 'findings'):
+            pages = []
+            for page in memory.pages.values():
+                pages.append({
+                    "url": page.url,
+                    "title": page.title,
+                    "summary": page.summary,
+                    "visited_count": page.visited_count,
+                    "key_info": list(page.key_info[-3:]),
+                })
+            self.memory_snapshot = {
+                "pages": pages,
+                "findings": list(memory.findings[-10:]),
+            }
+        elif isinstance(memory, dict):
+            self.memory_snapshot = memory
 
     # --- SubTask Management -------------------------------------------
 
@@ -229,6 +257,40 @@ class Task(BaseModel):
                 self.save()
                 return
 
+    # --- User Injection Management ------------------------------------
+
+    def add_injection(self, content: str) -> UserInjection:
+        """Record a user-injected command/suggestion."""
+        inj = UserInjection(
+            content=content,
+            timestamp=datetime.now().strftime("%H:%M:%S"),
+        )
+        self.user_injections.append(inj)
+        self.save()
+        return inj
+
+    def get_pending_injections(self) -> list[UserInjection]:
+        """Get all injections not yet consumed by the planner."""
+        return [inj for inj in self.user_injections if not inj.consumed]
+
+    def consume_injections(self) -> list[UserInjection]:
+        """Mark all pending injections as consumed and return them."""
+        pending = self.get_pending_injections()
+        for inj in pending:
+            inj.consumed = True
+        return pending
+
+    def get_injections_for_prompt(self) -> str:
+        """Format pending injections for inclusion in LLM prompts.
+        Marks them as consumed after formatting."""
+        pending = self.consume_injections()
+        if not pending:
+            return ""
+        lines = []
+        for inj in pending:
+            lines.append(f"  [{inj.timestamp}] {inj.content}")
+        return "\n".join(lines)
+
     # --- Queries ------------------------------------------------------
 
     def get_current_status(self) -> dict:
@@ -320,6 +382,15 @@ class Task(BaseModel):
                 }
                 for sl in self.supervisor_logs
             ],
+            "user_injections": [
+                {
+                    "content": inj.content,
+                    "timestamp": inj.timestamp,
+                    "consumed": inj.consumed,
+                }
+                for inj in self.user_injections
+            ],
+            "memory": self.memory_snapshot,
         }
         log_path = run_context.get_log_path("task_plan.json")
         with open(log_path, "w", encoding="utf-8") as f:

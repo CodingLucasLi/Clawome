@@ -11,6 +11,7 @@ import platform
 import time
 import tempfile
 import threading
+import concurrent.futures
 from playwright.sync_api import sync_playwright
 import config as cfg
 
@@ -49,12 +50,25 @@ _USE_JS_WALKER = os.environ.get("CLAWOME_JS_WALKER", "1") == "1"
 
 
 class BrowserManager:
+    """Wraps Playwright browser with thread-safe access.
+
+    Playwright's sync_api binds to the thread that creates it. Flask's
+    threaded=True means each request may arrive on a different thread.
+    To guarantee thread affinity, ALL Playwright operations are dispatched
+    to a single dedicated worker thread via _pw_executor.
+    """
+
     def __init__(self):
         self._playwright = None
         self._browser = None
         self._context = None
         self._page = None
         self._lock = threading.Lock()
+        # Single-thread executor ensures ALL Playwright calls happen on the
+        # same thread, preventing "cannot switch to a different thread" errors.
+        self._pw_executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="playwright"
+        )
         self._node_map: dict[str, str] = {}   # hid → css selector
         self._xpath_map: dict[str, str] = {}  # hid → xpath expression
         self._last_filtered: list[dict] = []  # cached interactive nodes for DOM diff
@@ -62,6 +76,16 @@ class BrowserManager:
         self._download_dir = tempfile.mkdtemp()
         self._downloads: list[str] = []
         self._new_pages: list = []
+
+    def _on_pw_thread(self, fn, *args, **kwargs):
+        """Run fn(*args, **kwargs) on the dedicated Playwright thread.
+
+        This ensures thread affinity: the same thread that called
+        sync_playwright().start() is always used for subsequent calls.
+        Blocks until the callable returns (or raises).
+        """
+        future = self._pw_executor.submit(fn, *args, **kwargs)
+        return future.result(timeout=120)  # generous timeout for slow pages
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -760,6 +784,21 @@ class BrowserManager:
             sel = self._resolve(node_id)
             self._page.locator(sel).first.focus(timeout=cfg.get("click_timeout"))
             return self._action_result(f"Focused [{node_id}]", refresh_dom=refresh_dom, fields=fields)
+
+    # ==================================================================
+    # 18b  JavaScript Execution
+    # ==================================================================
+
+    def execute_js(self, script, refresh_dom=True, fields=None):
+        """Execute arbitrary JavaScript on the current page and return the result."""
+        with self._lock:
+            self._ensure_open()
+            result = self._page.evaluate(script)
+            return self._action_result(
+                f"JS result: {str(result)[:200]}",
+                refresh_dom=refresh_dom,
+                fields=fields,
+            )
 
     # ==================================================================
     # 19-21  Scrolling

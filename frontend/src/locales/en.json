@@ -72,60 +72,6 @@
     "statPlanning": "Task planning"
   },
 
-  "agent": {
-    "title": "Task Agent",
-    "desc": "Enter a task description. The AI agent will autonomously browse the web, plan subtasks, execute actions, and deliver results.",
-    "placeholder": "e.g. Search for NYU MS Electrical Engineering admission requirements",
-    "running": "Running...",
-    "startTask": "Start Task",
-    "stop": "Stop",
-    "subtasks": "subtasks",
-    "result": "Result",
-    "elapsed": "Elapsed",
-    "cost": "Cost",
-    "calls": " calls",
-
-    "goto": "goto",
-    "click": "click",
-    "input": "input",
-    "select": "select",
-    "text": "text",
-    "tab": "tab",
-    "wait": "wait",
-    "done": "done",
-    "thinking": "thinking",
-    "step": "Step",
-
-    "decidingAction": "Deciding next action",
-    "planningTask": "Planning task",
-    "evaluatingProgress": "Evaluating progress",
-    "reviewingResults": "Reviewing results",
-    "replanning": "Replanning",
-    "supervising": "Supervising execution",
-    "progressCheck": "Progress check",
-    "diagnosingPage": "Diagnosing page",
-
-    "navigating": "Navigating",
-    "clicking": "Clicking",
-    "typing": "Typing",
-    "selecting": "Selecting",
-    "readingText": "Reading text",
-    "switchingTab": "Switching tab",
-    "waiting": "Waiting",
-    "finishing": "Finishing",
-    "startingUp": "Starting up",
-    "processing": "Processing",
-
-    "configMissing": "Go to Settings > Agent to configure",
-    "authError": "Check your API Key in Settings > Agent",
-    "configError": "Check API Base URL in Settings > Agent",
-    "modelError": "Check Model Name in Settings > Agent",
-    "connectionError": "Check API Base URL in Settings > Agent",
-    "rateLimit": "Please wait a moment and try again",
-    "browserError": "Make sure the backend server is running",
-    "taskRunning": "Wait for the current task to finish or stop it"
-  },
-
   "viewer": {
     "title": "Browser Playground",
     "browserOpen": "Browser is open",
@@ -249,6 +195,7 @@
     "temperatureDesc": "0 = deterministic, higher = more creative",
     "maxTokensDesc": "Maximum tokens per LLM response",
     "maxStepsDesc": "Maximum action steps before a subtask is force-completed",
+    "maxHistoryDesc": "Number of recent messages sent to LLM as context",
     "startUrlDesc": "Browser opens this URL at the start of each task",
     "navTimeoutDesc": "Timeout for page open / back / forward",
     "reloadTimeoutDesc": "Timeout for page reload",
@@ -358,6 +305,39 @@
     "removed": "− Removed",
     "changed": "△ Changed",
     "noDomChanges": "No dom_changes in response (action may not support diff yet)"
+  },
+
+  "chat": {
+    "title": "Agent Chat",
+    "newChat": "New Chat",
+    "placeholder": "Ask anything or describe a web task...",
+    "taskPlaceholder": "Send a command to the running task...",
+    "send": "Send",
+    "stop": "Stop",
+    "emptyTitle": "How can I help you?",
+    "emptyHint": "Chat freely, or describe a web task",
+    "injectionMessage": "Command sent to task: \"{{content}}\""
+  },
+
+  "taskInfo": {
+    "currentRequest": "Current Request",
+    "activityFeed": "Activity Feed",
+    "taskDashboard": "Task Dashboard",
+    "agentActivity": "Agent Activity",
+    "browser": "Browser",
+    "noTabs": "No browser tabs",
+    "subtasks": "Subtasks",
+    "findings": "Findings",
+    "pagesVisited": "Pages Visited",
+    "userInjections": "User Injections"
+  },
+
+  "taskResult": {
+    "completed": "Task Completed",
+    "failed": "Task Failed",
+    "cancelled": "Cancelled",
+    "subtasks": "{{count}} subtasks",
+    "llmCalls": "{{count}} LLM calls"
   },
 
   "tabBar": {

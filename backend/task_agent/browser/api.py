@@ -4,7 +4,8 @@ from __future__ import annotations
 
 Basic methods:
   open_browser, get_url, get_dom    — navigation and page state
-  get_tabs, switch_tab, close_tab   — tab management
+  back, forward, refresh            — history navigation
+  get_tabs, switch_tab, close_tab, new_tab — tab management
 
 Advanced methods:
   detect_new_tab  — compare tab lists before/after to find and switch to new tabs
@@ -95,6 +96,60 @@ async def get_text(node_id: str) -> str:
         return resp.json().get("text", "")
 
 
+async def get_page_source() -> str:
+    """Get the raw HTML source of the current page."""
+    async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+        resp = await client.get(f"{BASE_URL}/source")
+        _check_response(resp)
+        return resp.json().get("html", "")
+
+
+# ─── History Navigation ────────────────────────────────────────
+
+
+async def back() -> dict:
+    """Go back in browser history. Returns {"status", "dom"}."""
+    async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+        resp = await client.post(f"{BASE_URL}/back", json={})
+        _check_response(resp)
+        return resp.json()
+
+
+async def forward() -> dict:
+    """Go forward in browser history. Returns {"status", "dom"}."""
+    async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+        resp = await client.post(f"{BASE_URL}/forward", json={})
+        _check_response(resp)
+        return resp.json()
+
+
+async def refresh() -> dict:
+    """Refresh the current page. Returns {"status", "dom"}."""
+    async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+        resp = await client.post(f"{BASE_URL}/refresh", json={})
+        _check_response(resp)
+        return resp.json()
+
+
+# ─── Scroll ────────────────────────────────────────────────
+
+
+async def scroll_down(pixels: int = 500) -> dict:
+    """Scroll the page down. Returns {"status", "dom"}."""
+    async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+        resp = await client.post(f"{BASE_URL}/scroll/down", json={"pixels": pixels})
+        _check_response(resp)
+        return resp.json()
+
+
+async def scroll_up(pixels: int = 500) -> dict:
+    """Scroll the page up. Returns {"status", "dom"}."""
+    async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+        resp = await client.post(f"{BASE_URL}/scroll/up", json={"pixels": pixels})
+        _check_response(resp)
+        return resp.json()
+
+
 # ─── Page Actions ───────────────────────────────────────
 
 
@@ -151,6 +206,26 @@ async def close_tab(tab_id: int | None = None) -> list[dict]:
         resp = await client.post(f"{BASE_URL}/tabs/close", json=body)
         _check_response(resp)
         return resp.json().get("tabs", [])
+
+
+async def new_tab(url: str | None = None) -> dict:
+    """Open a new tab, optionally navigating to a URL. Returns {"status", "tab_id", "dom"}."""
+    async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+        body = {"url": url} if url else {}
+        resp = await client.post(f"{BASE_URL}/tabs/new", json=body)
+        _check_response(resp)
+        return resp.json()
+
+
+# ─── JavaScript Execution ───────────────────────────────────────────
+
+
+async def execute_js(script: str) -> dict:
+    """Execute JavaScript on the current page. Returns {"status", "result", "dom"}."""
+    async with httpx.AsyncClient(timeout=API_TIMEOUT) as client:
+        resp = await client.post(f"{BASE_URL}/execute-js", json={"script": script})
+        _check_response(resp)
+        return resp.json()
 
 
 # ─── Tab Management (Advanced) ──────────────────────────────────────

@@ -72,60 +72,6 @@
     "statPlanning": "任务规划"
   },
 
-  "agent": {
-    "title": "任务智能体",
-    "desc": "输入任务描述。AI 智能体将自主浏览网页、规划子任务、执行操作并交付结果。",
-    "placeholder": "例：搜索纽约大学电气工程硕士入学要求",
-    "running": "运行中...",
-    "startTask": "开始任务",
-    "stop": "停止",
-    "subtasks": "子任务",
-    "result": "结果",
-    "elapsed": "用时",
-    "cost": "费用",
-    "calls": " 次",
-
-    "goto": "跳转",
-    "click": "点击",
-    "input": "输入",
-    "select": "选择",
-    "text": "文本",
-    "tab": "标签页",
-    "wait": "等待",
-    "done": "完成",
-    "thinking": "思考中",
-    "step": "步骤",
-
-    "decidingAction": "决定下一步操作",
-    "planningTask": "规划任务",
-    "evaluatingProgress": "评估进度",
-    "reviewingResults": "审核结果",
-    "replanning": "重新规划",
-    "supervising": "监督执行",
-    "progressCheck": "进度检查",
-    "diagnosingPage": "诊断页面",
-
-    "navigating": "正在导航",
-    "clicking": "正在点击",
-    "typing": "正在输入",
-    "selecting": "正在选择",
-    "readingText": "正在读取文本",
-    "switchingTab": "正在切换标签页",
-    "waiting": "正在等待",
-    "finishing": "正在完成",
-    "startingUp": "正在启动",
-    "processing": "处理中",
-
-    "configMissing": "请到 设置 > 智能体 中配置",
-    "authError": "请检查 设置 > 智能体 中的 API Key",
-    "configError": "请检查 设置 > 智能体 中的 API Base URL",
-    "modelError": "请检查 设置 > 智能体 中的模型名称",
-    "connectionError": "请检查 设置 > 智能体 中的 API Base URL",
-    "rateLimit": "请稍候再试",
-    "browserError": "请确保后端服务正在运行",
-    "taskRunning": "请等待当前任务完成或停止它"
-  },
-
   "viewer": {
     "title": "浏览器调试台",
     "browserOpen": "浏览器已打开",
@@ -249,6 +195,7 @@
     "temperatureDesc": "0 = 确定性，越高越有创意",
     "maxTokensDesc": "每次 LLM 响应的最大 Token 数",
     "maxStepsDesc": "子任务强制完成前的最大操作步数",
+    "maxHistoryDesc": "发送给 LLM 的最近对话消息数量",
     "startUrlDesc": "每次任务开始时浏览器打开的 URL",
     "navTimeoutDesc": "页面打开 / 后退 / 前进超时",
     "reloadTimeoutDesc": "页面重新加载超时",
@@ -358,6 +305,39 @@
     "removed": "− 移除",
     "changed": "△ 变更",
     "noDomChanges": "响应中没有 dom_changes（该操作可能尚不支持差异对比）"
+  },
+
+  "chat": {
+    "title": "智能对话",
+    "newChat": "新对话",
+    "placeholder": "问任何问题，或描述一个网页任务...",
+    "taskPlaceholder": "发送指令给正在执行的任务...",
+    "send": "发送",
+    "stop": "停止",
+    "emptyTitle": "有什么可以帮你？",
+    "emptyHint": "随便聊聊，或描述一个网页任务",
+    "injectionMessage": "指令已发送到任务: \"{{content}}\""
+  },
+
+  "taskInfo": {
+    "currentRequest": "当前请求",
+    "activityFeed": "操作记录",
+    "taskDashboard": "任务仪表盘",
+    "agentActivity": "智能体活动",
+    "browser": "浏览器",
+    "noTabs": "无浏览器标签页",
+    "subtasks": "子任务",
+    "findings": "发现",
+    "pagesVisited": "已访问页面",
+    "userInjections": "用户指令"
+  },
+
+  "taskResult": {
+    "completed": "任务完成",
+    "failed": "任务失败",
+    "cancelled": "已取消",
+    "subtasks": "{{count}} 个子任务",
+    "llmCalls": "{{count}} 次 LLM"
   },
 
   "tabBar": {

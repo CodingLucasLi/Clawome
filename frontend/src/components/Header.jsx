@@ -43,6 +43,9 @@ export default function Header() {
         <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           {t('header.home')}
         </NavLink>
+        <NavLink to="/agent" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+          {t('header.agent')}
+        </NavLink>
         <NavLink to="/playground" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           {t('header.playground')}
         </NavLink>
@@ -51,9 +54,6 @@ export default function Header() {
         </NavLink>
         <NavLink to="/benchmark" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           {t('header.benchmark')}
-        </NavLink>
-        <NavLink to="/agent" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          {t('header.agent')}
         </NavLink>
         <NavLink to="/settings" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           {t('header.settings')}

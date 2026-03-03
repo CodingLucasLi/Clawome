@@ -285,17 +285,37 @@ export function getCompressorTemplate() {
 }
 
 // ======================================================================
-// Task Agent
+// Chat Agent (Orchestrator Layer)
 // ======================================================================
 
-export function startAgent(task) {
-  return api.post('/agent/start', { task })
+export function sendChatMessage(message) {
+  return api.post('/chat/send', { message })
 }
 
-export function getAgentStatus() {
-  return api.get('/agent/status')
+export function getChatStatus(since = 0) {
+  return api.get('/chat/status', { params: { since } })
 }
 
-export function stopAgent() {
-  return api.post('/agent/stop')
+export function answerDecision(decision_id, selected_key) {
+  return api.post('/chat/decision', { decision_id, selected_key })
+}
+
+export function stopChat() {
+  return api.post('/chat/stop')
+}
+
+export function resetChat() {
+  return api.post('/chat/reset')
+}
+
+export function listChatSessions() {
+  return api.get('/chat/sessions')
+}
+
+export function restoreChatSession(sessionId) {
+  return api.post('/chat/sessions/restore', { session_id: sessionId })
+}
+
+export function deleteChatSession(sessionId) {
+  return api.post('/chat/sessions/delete', { session_id: sessionId })
 }

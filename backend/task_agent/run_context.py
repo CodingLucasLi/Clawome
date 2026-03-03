@@ -10,7 +10,7 @@ import threading
 from datetime import datetime
 
 _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-_LOGS_ROOT = os.path.join(_PROJECT_ROOT, "logs")
+_LOGS_ROOT = os.path.join(_PROJECT_ROOT, "data", "logs")
 
 # Current run directory (module-level singleton, available after init())
 _run_dir: str = ""
@@ -49,6 +49,26 @@ def get_run_dir() -> str:
 def get_log_path(filename: str) -> str:
     """Get a file path within the current run's log directory."""
     return os.path.join(get_run_dir(), filename)
+
+
+# ── User injection queue (thread-safe) ───────────────────────────────
+
+_injection_lock = threading.Lock()
+_injections: list[str] = []
+
+
+def add_injection(content: str):
+    """Add a user injection to the queue (called from Flask thread)."""
+    with _injection_lock:
+        _injections.append(content)
+
+
+def drain_injections() -> list[str]:
+    """Take all pending injections from the queue (called from workflow thread)."""
+    with _injection_lock:
+        items = list(_injections)
+        _injections.clear()
+    return items
 
 
 # ── Cancellation flag (thread-safe) ──────────────────────────────────

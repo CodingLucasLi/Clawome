@@ -37,6 +37,7 @@ NO_API_BASE = {
 def get_llm(
     model_name: str | None = None,
     temperature: float | None = None,
+    streaming: bool = False,
 ) -> ChatLiteLLM:
     """Create an LLM instance routed through LiteLLM.
 
@@ -59,6 +60,7 @@ def get_llm(
         temperature=temperature if temperature is not None else settings.llm.temperature,
         max_tokens=settings.llm.max_tokens,
         timeout=60,           # 60s hard timeout — prevents 166s hangs
+        streaming=streaming,
     )
 
     # API key

@@ -113,6 +113,7 @@ const SECTION_GROUPS = {
       title: 'settings.agentBehavior',
       items: [
         { key: 'agent_max_steps', label: 'Max Steps per Subtask', unit: 'steps', desc: 'settings.maxStepsDesc' },
+        { key: 'agent_max_history', label: 'Chat History Length', unit: 'msgs', desc: 'settings.maxHistoryDesc' },
         { key: 'agent_start_url', label: 'Start URL', unit: '', desc: 'settings.startUrlDesc', type: 'text', placeholder: 'https://www.baidu.com' },
       ],
     },

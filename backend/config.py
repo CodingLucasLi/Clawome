@@ -29,6 +29,7 @@ _ENV_MAP = {
     "agent_max_steps":  "AGENT_MAX_STEPS",
     "agent_start_url":  "AGENT_START_URL",
     "agent_version":    "AGENT_VERSION",
+    "agent_max_history": "AGENT_MAX_HISTORY",
 }
 
 # ── Default values ──
@@ -180,6 +181,8 @@ DEFAULTS = {
     "agent_start_url": "https://www.baidu.com",
     # Agent workflow version: "v2" (dual-dimension) or "v3" (agent/nodes/workflows)
     "agent_version": "v3",
+    # Max chat history messages sent to LLM (controls token usage)
+    "agent_max_history": 20,
 }
 
 # ── Runtime state ──
