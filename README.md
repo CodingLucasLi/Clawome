@@ -84,6 +84,27 @@ clawome stop            # Cancel
 
 Open `http://localhost:5001` — chat with Beanie, the built-in AI assistant. It understands context, handles follow-ups, and delegates complex browsing tasks automatically.
 
+**Multi-turn conversation example:**
+
+```
+You:    Find the top 3 AI papers on arxiv today
+Beanie: Here are today's top 3 AI papers:
+        1. "Scaling Laws for..." — 45 citations
+        2. "Efficient Fine-tuning..." — 32 citations
+        3. "Multi-modal Agents..." — 28 citations
+
+You:    Tell me more about the first one
+Beanie: "Scaling Laws for Neural Architecture Search"
+        Authors: ... Abstract: ...
+
+You:    What about the second author's other recent work?
+Beanie: I'll look up their profile on Google Scholar...
+        [browses Google Scholar, extracts papers]
+        Here are their recent publications: ...
+```
+
+Each message builds on previous context — no need to repeat yourself.
+
 <details>
 <summary><strong>Install from source</strong></summary>
 

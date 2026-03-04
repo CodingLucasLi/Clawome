@@ -1,10 +1,11 @@
 ---
-sidebar_position: 11
+sidebar_position: 12
+sidebar_label: Task Engine API
 ---
 
-# Chat Agent
+# Task Engine API
 
-The Chat Agent API provides a conversational interface to Clawome's browser agent. Send natural language messages — the agent (Beanie) decides whether to answer directly, use browser tools, or launch an autonomous multi-step task.
+The Task Engine (Runner) handles autonomous multi-step web browsing. It is invoked by the Chat Agent (Beanie) via the `create_task` tool when a task requires complex, multi-page browsing. You typically interact with it through the [Chat Agent](./chat-agent.md), but this page documents the internal API and architecture.
 
 ## Base URL
 

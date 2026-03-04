@@ -84,6 +84,27 @@ clawome stop            # 取消任务
 
 打开 `http://localhost:5001`，与内置 AI 助手豆豆对话。它能理解上下文、处理追问，并自动执行复杂的浏览任务。
 
+**多轮对话示例：**
+
+```
+你：    帮我找一下 arxiv 今天排名前三的 AI 论文
+豆豆：  今天 arxiv 排名前三的 AI 论文：
+        1.《Scaling Laws for...》— 45 引用
+        2.《Efficient Fine-tuning...》— 32 引用
+        3.《Multi-modal Agents...》— 28 引用
+
+你：    第一篇详细说说
+豆豆：  《Scaling Laws for Neural Architecture Search》
+        作者：... 摘要：...
+
+你：    第二个作者最近还有什么论文？
+豆豆：  我去 Google Scholar 查一下...
+        [浏览 Google Scholar，提取论文列表]
+        他最近的发表有：...
+```
+
+每条消息都基于之前的上下文，不用重复说明。
+
 <details>
 <summary><strong>从源码安装</strong></summary>
 

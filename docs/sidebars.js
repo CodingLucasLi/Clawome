@@ -4,6 +4,11 @@ const sidebars = {
     'intro',
     {
       type: 'category',
+      label: 'Chat Agent',
+      items: ['api/chat-agent', 'api/task-agent'],
+    },
+    {
+      type: 'category',
       label: 'Navigation',
       items: ['api/navigation'],
     },
