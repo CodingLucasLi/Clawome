@@ -8,29 +8,41 @@ Base URL: {{BASE_URL}}/api
 
 ## Task Agent (Recommended)
 
-One API call to complete any web task. The agent plans subtasks, controls the browser, reads pages, and returns results — all autonomously.
+The Task Agent is a conversational AI that controls the browser for you. Send a natural language message, and it plans and executes browser tasks autonomously.
 
-### Start a task
+### Send a task
 
-  POST {{BASE_URL}}/api/agent/start
-  Body: {"task": "Find the top 3 AI news on Hacker News and summarize them", "max_steps": 30}
+  POST {{BASE_URL}}/api/chat/send
+  Body: {"message": "Find the top 3 AI news on Hacker News and summarize them"}
 
-- `task` (string, required) — Natural language task description.
-- `max_steps` (number, optional) — Override step limit (default: 15). Use 30+ for complex multi-page tasks.
+- `message` (string, required) — Natural language task description.
 
-Response: `{"status": "ok", "task_id": "1", "status": "started"}`
+Response: `{"status": "ok", "session_id": "..."}`
 
 ### Poll progress
 
-  GET {{BASE_URL}}/api/agent/status
+  GET {{BASE_URL}}/api/chat/status?since=0
 
-Response includes: `status`, `subtasks`, `steps`, `final_result`, `llm_usage`.
+Poll until `status == "ready"`. Use `since=N` to fetch only new messages.
 
-Status values: `idle` → `starting` → `running` → `completed` / `failed` / `cancelled`
+Response:
+```
+{
+  "status": "processing" | "ready",
+  "session_id": "...",
+  "message_count": 5,
+  "messages": [
+    {"id": "...", "role": "user", "content": "...", "timestamp": 1234},
+    {"id": "...", "role": "agent", "type": "result", "content": "...", "timestamp": 1234}
+  ]
+}
+```
+
+When `status == "ready"`, the last `role: "agent"` message contains the result.
 
 ### Cancel task
 
-  POST {{BASE_URL}}/api/agent/stop
+  POST {{BASE_URL}}/api/chat/stop
 
 ### Tips for writing tasks
 

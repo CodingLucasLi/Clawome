@@ -82,7 +82,7 @@ LLM_MODEL=qwen3.5-plus
 
 \`\`\`bash
 ./start.sh
-# Dashboard:  http://localhost:5173
+# Dashboard:  http://localhost:5174
 # API:        http://localhost:5001
 \`\`\`
 
@@ -108,7 +108,7 @@ python app.py               # Starts on http://localhost:5001
 # Frontend (in another terminal)
 cd frontend
 npm install
-npm run dev                 # Starts on http://localhost:5173
+npm run dev                 # Starts on http://localhost:5174
 \`\`\``,
 
 quickstart: `# Quick Start
@@ -1435,132 +1435,81 @@ POST /api/browser/close
 
 After closing, you can call \`POST /open\` to start a new browser session.`,
 
-'task-agent': `# Task Agent API
+'task-agent': `# Task Agent (Chat API)
 
-The Task Agent is an AI-powered autonomous browser agent. Give it a natural language task description, and it will plan subtasks, execute browser actions, evaluate progress, and return structured results.
-
-> **Note:** The current version only supports **Qwen (Tongyi Qianwen)** as the LLM provider. Support for more models is coming soon.
+The Task Agent is a conversational AI-powered browser agent. Send a natural language message and it autonomously plans, browses, and returns results.
 
 ## How It Works
 
 \`\`\`
-User: "Find AI-related programs at NYU Tandon"
-    |
-    v
-Main Planner (LLM) ─── Decompose into subtasks
-    |
-    v
-Executor Loop:
-    Read DOM → LLM decides action → Execute → Log
-    |                                          |
-    +── Supervisor (every 5 steps)
-    +── Evaluator (per subtask completion)
-    |
-    v
-Final Review (LLM) ─── Verify all requirements met
-    |
-    v
-Summary + Structured Result
+User message → Chat Agent (Doudou) → Task runner → Browser actions → Result
 \`\`\`
 
-## Workflow Nodes
-
-| Node | Role | Trigger |
-|------|------|---------|
-| \`main_planner\` | Decompose task into numbered subtasks | Once at start |
-| \`step_exec\` | Execute single browser action via LLM | Every step |
-| \`supervisor\` | Detect execution anomalies (loops, stuck) | Every 5 steps |
-| \`page_doctor\` | Diagnose and fix page loading issues | On errors |
-| \`evaluate\` | Assess subtask completion, extract findings | On subtask done |
-| \`final_check\` | Verify all requirements satisfied | After all subtasks |
-| \`replan\` | Add supplementary subtasks if incomplete | On review failure |
-| \`summary\` | Aggregate results and statistics | On success |
+The agent is session-based and supports multi-turn conversation. You can follow up, refine tasks, or ask for more details.
 
 ---
 
-## Start Task
+## Send Message
 
-Start a new autonomous task. The agent runs in the background.
+Send a task description or follow-up message to the agent.
 
 \`\`\`
-POST /api/agent/start
+POST /api/chat/send
 \`\`\`
 
 **Request Body:**
 
 \`\`\`json
 {
-  "task": "Search Hacker News for the latest AI news and summarize top 3 stories"
+  "message": "Search Hacker News for the latest AI news and summarize top 3 stories"
 }
 \`\`\`
 
-- \`task\` (string, required) — Natural language task description.
+- \`message\` (string, required) — Natural language task or follow-up.
 
 **Response:**
 
 \`\`\`json
 {
   "status": "ok",
-  "message": "Task started"
+  "session_id": "abc123"
 }
 \`\`\`
 
 **Errors:**
 
-- \`409\` — A task is already running (\`error_code: "task_running"\`)
-- \`400\` — Missing task description or LLM not configured
+- \`409\` — Agent is busy (\`error_code: "busy"\`)
+- \`400\` — Missing message content
 
 ---
 
 ## Poll Status
 
-Poll the current task progress. Use this endpoint to monitor subtask execution, step details, and LLM usage.
+Poll for new messages since a given index. Use \`since=0\` to get all messages.
 
 \`\`\`
-GET /api/agent/status
+GET /api/chat/status?since=0
 \`\`\`
 
-**Response (running):**
+**Response:**
 
 \`\`\`json
 {
-  "running": true,
-  "task": "Search Hacker News for AI news...",
-  "subtasks": [
-    {
-      "id": 1,
-      "description": "Navigate to Hacker News",
-      "status": "completed",
-      "result": "Successfully opened news.ycombinator.com"
-    },
-    {
-      "id": 2,
-      "description": "Find AI-related posts",
-      "status": "in_progress",
-      "result": null
-    }
-  ],
-  "current_subtask": 2,
-  "steps": [...],
-  "llm_usage": {
-    "total_calls": 12,
-    "total_input_tokens": 45000,
-    "total_output_tokens": 3200,
-    "total_cost": 0.015
-  }
+  "status": "processing",
+  "session_id": "abc123",
+  "message_count": 3,
+  "messages": [
+    {"id": "u1", "role": "user", "content": "Search Hacker News...", "timestamp": 1700000000},
+    {"id": "a1", "role": "agent", "type": "result", "content": "Here are the top 3 AI stories...", "timestamp": 1700000010}
+  ]
 }
 \`\`\`
 
-**Response (idle):**
+- \`status\` — \`"processing"\` while running, \`"ready"\` when done
+- \`messages\` — Only messages from index \`since\` onward
+- Agent reply: last message with \`role: "agent"\`
 
-\`\`\`json
-{
-  "running": false,
-  "task": null,
-  "subtasks": [],
-  "steps": []
-}
-\`\`\`
+**Polling pattern:** poll every 2s until \`status == "ready"\`, then read the last agent message.
 
 ---
 
@@ -1569,24 +1518,37 @@ GET /api/agent/status
 Cancel the currently running task.
 
 \`\`\`
-POST /api/agent/stop
+POST /api/chat/stop
 \`\`\`
 
 **Response:**
 
 \`\`\`json
 {
-  "status": "ok",
-  "message": "Task cancelled"
+  "status": "stopped"
 }
 \`\`\`
 
 ---
 
-## Safety Constraints
+## Real-Time Stream (SSE)
 
-- **Browser-only**: Agent can only perform web browsing actions (no phone calls, emails, file downloads)
-- **Form guard**: Can fill forms but never submits unless the user explicitly asks
-- **Contact extraction**: Extracts and reports phone/email info instead of attempting to use them
-- **Hard limit**: \`recursion_limit=150\` as safety net against runaway execution`,
+Subscribe to server-sent events for token-level streaming updates.
+
+\`\`\`
+GET /api/chat/stream
+\`\`\`
+
+Events: \`init\`, \`processing\`, \`msg_start\`, \`token\`, \`done\`, \`agent_error\`
+
+---
+
+## Session Management
+
+\`\`\`
+POST /api/chat/reset          Start a new conversation
+GET  /api/chat/sessions       List saved sessions
+POST /api/chat/sessions/restore  {"session_id": "..."}
+POST /api/chat/sessions/delete   {"session_id": "..."}
+\`\`\``,
 }

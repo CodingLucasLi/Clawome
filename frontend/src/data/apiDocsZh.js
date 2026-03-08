@@ -60,7 +60,7 @@ LLM_MODEL=qwen3.5-plus
 
 \`\`\`bash
 ./start.sh
-# 控制台：  http://localhost:5173
+# 控制台：  http://localhost:5174
 # API：     http://localhost:5001
 \`\`\`
 
@@ -86,7 +86,7 @@ python app.py               # 启动于 http://localhost:5001
 # 前端（另开一个终端）
 cd frontend
 npm install
-npm run dev                 # 启动于 http://localhost:5173
+npm run dev                 # 启动于 http://localhost:5174
 \`\`\``,
 
 quickstart: `# 快速开始
@@ -1413,132 +1413,79 @@ POST /api/browser/close
 
 关闭后，你可以调用 \`POST /open\` 来启动新的浏览器会话。`,
 
-'task-agent': `# 智能体 API
+'task-agent': `# 智能体 API（Chat API）
 
-智能体是一个 AI 驱动的自主浏览器代理。给它一个自然语言任务描述，它会自动规划子任务、执行浏览器操作、评估进度并返回结构化结果。
-
-> **提示：** 当前版本仅支持**通义千问（Qwen）**作为 LLM 服务商，后续将很快支持更多大模型。
+智能体是一个对话式 AI 浏览器代理（豆豆）。发送自然语言消息，它会自动规划、浏览并返回结果。支持多轮对话，可以追问、补充需求。
 
 ## 工作原理
 
 \`\`\`
-用户："查找 NYU Tandon 的 AI 相关项目"
-    |
-    v
-主规划器 (LLM) ─── 分解为子任务
-    |
-    v
-执行循环：
-    读取 DOM → LLM 决策动作 → 执行 → 记录
-    |                                       |
-    +── 监督器（每 5 步检查一次）
-    +── 评估器（每个子任务完成时）
-    |
-    v
-最终审查 (LLM) ─── 验证是否满足所有需求
-    |
-    v
-汇总 + 结构化结果
+用户消息 → 聊天代理（豆豆）→ 任务执行器 → 浏览器操作 → 结果
 \`\`\`
-
-## 工作流节点
-
-| 节点 | 角色 | 触发时机 |
-|------|------|----------|
-| \`main_planner\` | 将任务分解为编号子任务 | 启动时执行一次 |
-| \`step_exec\` | 通过 LLM 执行单个浏览器动作 | 每个步骤 |
-| \`supervisor\` | 检测执行异常（循环、卡住） | 每 5 步 |
-| \`page_doctor\` | 诊断和修复页面加载问题 | 出错时 |
-| \`evaluate\` | 评估子任务完成情况、提取发现 | 子任务完成时 |
-| \`final_check\` | 验证是否满足所有需求 | 所有子任务完成后 |
-| \`replan\` | 补充子任务（如果不完整） | 审查失败时 |
-| \`summary\` | 汇总结果和统计数据 | 成功时 |
 
 ---
 
-## 启动任务
+## 发送消息
 
-启动一个新的自主任务。Agent 在后台运行。
+向智能体发送任务描述或追问消息。
 
 \`\`\`
-POST /api/agent/start
+POST /api/chat/send
 \`\`\`
 
 **请求体：**
 
 \`\`\`json
 {
-  "task": "搜索 Hacker News 上最新的 AI 新闻，总结前 3 条"
+  "message": "搜索 Hacker News 上最新的 AI 新闻，总结前 3 条"
 }
 \`\`\`
 
-- \`task\` (string, 必需) — 自然语言任务描述。
+- \`message\` (string, 必需) — 自然语言任务或追问内容。
 
 **响应：**
 
 \`\`\`json
 {
   "status": "ok",
-  "message": "Task started"
+  "session_id": "abc123"
 }
 \`\`\`
 
 **错误：**
 
-- \`409\` — 已有任务在运行 (\`error_code: "task_running"\`)
-- \`400\` — 缺少任务描述或 LLM 未配置
+- \`409\` — 智能体正忙 (\`error_code: "busy"\`)
+- \`400\` — 消息内容为空
 
 ---
 
 ## 轮询状态
 
-轮询当前任务进度。使用此端点监控子任务执行、步骤详情和 LLM 用量。
+获取指定索引之后的新消息。用 \`since=0\` 获取全部消息。
 
 \`\`\`
-GET /api/agent/status
+GET /api/chat/status?since=0
 \`\`\`
 
-**响应（运行中）：**
+**响应：**
 
 \`\`\`json
 {
-  "running": true,
-  "task": "搜索 Hacker News 上的 AI 新闻...",
-  "subtasks": [
-    {
-      "id": 1,
-      "description": "导航到 Hacker News",
-      "status": "completed",
-      "result": "成功打开 news.ycombinator.com"
-    },
-    {
-      "id": 2,
-      "description": "查找 AI 相关帖子",
-      "status": "in_progress",
-      "result": null
-    }
-  ],
-  "current_subtask": 2,
-  "steps": [...],
-  "llm_usage": {
-    "total_calls": 12,
-    "total_input_tokens": 45000,
-    "total_output_tokens": 3200,
-    "total_cost": 0.015
-  }
+  "status": "processing",
+  "session_id": "abc123",
+  "message_count": 3,
+  "messages": [
+    {"id": "u1", "role": "user", "content": "搜索 Hacker News...", "timestamp": 1700000000},
+    {"id": "a1", "role": "agent", "type": "result", "content": "以下是前 3 条 AI 新闻...", "timestamp": 1700000010}
+  ]
 }
 \`\`\`
 
-**响应（空闲）：**
+- \`status\` — \`"processing"\` 运行中，\`"ready"\` 已完成
+- \`messages\` — 仅返回 \`since\` 索引之后的消息
+- 智能体回复：最后一条 \`role: "agent"\` 的消息
 
-\`\`\`json
-{
-  "running": false,
-  "task": null,
-  "subtasks": [],
-  "steps": []
-}
-\`\`\`
+**轮询模式：** 每 2 秒轮询一次，直到 \`status == "ready"\`，然后读取最新的智能体消息。
 
 ---
 
@@ -1547,24 +1494,37 @@ GET /api/agent/status
 取消当前正在运行的任务。
 
 \`\`\`
-POST /api/agent/stop
+POST /api/chat/stop
 \`\`\`
 
 **响应：**
 
 \`\`\`json
 {
-  "status": "ok",
-  "message": "Task cancelled"
+  "status": "stopped"
 }
 \`\`\`
 
 ---
 
-## 安全约束
+## 实时流（SSE）
 
-- **仅限浏览器操作**：Agent 只能执行网页浏览操作（不能打电话、发邮件、下载文件）
-- **表单保护**：可以填写表单但不会自动提交，除非用户明确要求
-- **联系方式提取**：提取并报告电话/邮箱信息，而非尝试使用它们
-- **硬性限制**：\`recursion_limit=150\` 作为防止失控执行的安全网`,
+订阅服务器推送事件，获取逐 token 的流式更新。
+
+\`\`\`
+GET /api/chat/stream
+\`\`\`
+
+事件类型：\`init\`、\`processing\`、\`msg_start\`、\`token\`、\`done\`、\`agent_error\`
+
+---
+
+## 会话管理
+
+\`\`\`
+POST /api/chat/reset                  新建对话
+GET  /api/chat/sessions               查看历史会话列表
+POST /api/chat/sessions/restore       {"session_id": "..."} 恢复会话
+POST /api/chat/sessions/delete        {"session_id": "..."} 删除会话
+\`\`\``,
 }
