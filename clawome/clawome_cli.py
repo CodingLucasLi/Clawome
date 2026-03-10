@@ -37,6 +37,7 @@ PROVIDERS = [
     ("deepseek",   "DeepSeek",          None,                                                  "deepseek-chat"),
     ("moonshot",   "Moonshot",          None,                                                  "moonshot-v1-8k"),
     ("zhipu",      "Zhipu",             None,                                                  "glm-4"),
+    ("volcengine", "Volcengine (Doubao)", "https://ark.cn-beijing.volces.com/api/v3",           "doubao-seed-1.6-250615"),
     ("mistral",    "Mistral",           None,                                                  "mistral-large-latest"),
     ("groq",       "Groq",              None,                                                  "llama-3.1-70b"),
     ("xai",        "xAI",               None,                                                  "grok-2"),

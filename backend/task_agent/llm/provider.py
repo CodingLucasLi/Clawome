@@ -19,7 +19,7 @@ PROVIDER_PREFIX = {
     "deepseek":   "deepseek",
     "moonshot":   "moonshot",
     "zhipu":      "zhipu",
-    "volcengine": "volcengine",
+    "volcengine": "openai",       # Volcengine ARK uses OpenAI-compatible endpoint
     "minimax":    "minimax",
     "mistral":    "mistral",
     "groq":       "groq",
@@ -30,7 +30,7 @@ PROVIDER_PREFIX = {
 # Providers that do NOT need api_base — LiteLLM routes automatically
 NO_API_BASE = {
     "anthropic", "google", "deepseek", "moonshot",
-    "zhipu", "volcengine", "minimax", "mistral", "groq", "xai",
+    "zhipu", "minimax", "mistral", "groq", "xai",
 }
 
 
@@ -74,7 +74,7 @@ def get_llm(
     # Disable thinking/reasoning mode by default.
     # DashScope (Qwen3), DeepSeek (R1) — controlled via extra_body.enable_thinking.
     # Other providers ignore unknown fields silently.
-    if provider in ("dashscope", "deepseek", "custom", "openai"):
+    if provider in ("dashscope", "deepseek", "custom", "openai", "volcengine"):
         kwargs["model_kwargs"] = {"extra_body": {"enable_thinking": False}}
 
     return ChatLiteLLM(**kwargs)
