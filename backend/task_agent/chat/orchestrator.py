@@ -475,7 +475,10 @@ def _process_message(content: str):
 
                 if not isinstance(chunk, AIMessageChunk):
                     continue
-                token = chunk.content
+                if isinstance(chunk.content, list):
+                    token = ''.join([msg.get(msg.get('type','text'),'') for msg in chunk.content])
+                else:
+                    token = chunk.content
                 if not token:
                     continue
                 accumulated += token
