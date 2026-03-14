@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clawome"
-version = "0.1.8"
+version = "0.1.9"
 description = "Clawome — AI browser agent. One command to run any web task."
 readme = "README.md"
 license = "Apache-2.0"

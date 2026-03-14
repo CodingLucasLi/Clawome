@@ -595,6 +595,18 @@ def api_status():
     return jsonify(manager.get_status())
 
 
+@app.route("/api/server/shutdown", methods=["POST"])
+def api_server_shutdown():
+    """Shutdown the server process gracefully."""
+    import threading, os, signal as _sig
+    def _shutdown():
+        import time as _t
+        _t.sleep(0.5)
+        os.kill(os.getpid(), _sig.SIGTERM)
+    threading.Thread(target=_shutdown, daemon=True).start()
+    return jsonify({"status": "shutting_down"})
+
+
 @app.route("/api/browser/navigate", methods=["POST"])
 def api_navigate():
     body = _body()

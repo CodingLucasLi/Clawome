@@ -5,7 +5,23 @@ Usage:
     clawome start                                # Start server + guided setup
     clawome "Go to Hacker News and find top 3 AI stories"
     clawome status
-    clawome stop
+    clawome stop                                 # Stop the server
+
+Browser commands:
+    clawome open "https://example.com"           # Open URL
+    clawome bing "query"                         # Search via Bing
+    clawome baidu "query"                        # Search via Baidu
+    clawome search "query"                       # Search via Google
+    clawome click <node_id>                      # Click an element
+    clawome type <node_id> "text"                # Type into an element
+    clawome scroll [down|up]                     # Scroll the page
+    clawome back                                 # Navigate back
+    clawome refresh                              # Refresh the page
+    clawome dom                                  # Show current DOM
+    clawome text <node_id>                       # Get text of an element
+    clawome tabs                                 # List all tabs
+    clawome tab <tab_id>                         # Switch to a tab
+    clawome browser open|close|status            # Browser lifecycle
 """
 
 import argparse
@@ -16,6 +32,7 @@ import subprocess
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 DEFAULT_URL = "http://localhost:5001"
@@ -35,9 +52,10 @@ PROVIDERS = [
     ("anthropic",  "Anthropic",         None,                                                  "claude-sonnet-4-20250514"),
     ("google",     "Google",            None,                                                  "gemini-2.0-flash"),
     ("deepseek",   "DeepSeek",          None,                                                  "deepseek-chat"),
-    ("moonshot",   "Moonshot",          None,                                                  "moonshot-v1-8k"),
-    ("zhipu",      "Zhipu",             None,                                                  "glm-4"),
-    ("volcengine", "Volcengine (Doubao)", "https://ark.cn-beijing.volces.com/api/v3",           "doubao-seed-1.6-250615"),
+    ("moonshot",   "Moonshot",          "https://api.moonshot.cn/v1",                          "moonshot-v1-8k"),
+    ("zhipu",      "Zhipu",             "https://open.bigmodel.cn/api/paas/v4/",              "glm-4"),
+    ("volcengine", "Volcengine (Doubao)", "https://ark.cn-beijing.volces.com/api/v3",          "doubao-seed-1.6-250615"),
+    ("minimax",    "MiniMax",           "https://api.minimax.chat/v1",                         "minimax-text-01"),
     ("mistral",    "Mistral",           None,                                                  "mistral-large-latest"),
     ("groq",       "Groq",              None,                                                  "llama-3.1-70b"),
     ("xai",        "xAI",               None,                                                  "grok-2"),
@@ -88,14 +106,58 @@ def _is_server_running(base_url):
     return False
 
 
-def _exit_no_server(base_url):
+def _require_server(base_url):
     """Print error and exit if server is unreachable."""
-    print(f"Error: Cannot connect to {base_url}")
-    print("Run 'clawome start' to start the server first.")
-    sys.exit(1)
+    if not _is_server_running(base_url):
+        print(f"Error: Cannot connect to {base_url}")
+        print("Run 'clawome start' to start the server first.")
+        sys.exit(1)
+
+
+def _url_encode(query):
+    """URL-encode a search query."""
+    return urllib.parse.quote_plus(query)
 
 
 # ── Display helpers ──────────────────────────────────────────────────
+
+def _print_tabs(tabs):
+    """Print tabs with active indicator."""
+    if not tabs:
+        print("  (no tabs open)")
+        return
+    for t in tabs:
+        marker = " *" if t.get("active") else "  "
+        tid = t.get("tab_id", "?")
+        title = t.get("title", "")[:60]
+        url = t.get("url", "")
+        print(f" {marker}[{tid}] {title}  {url}")
+
+
+def _print_browser_result(base_url, result):
+    """Print standardized browser output: tabs + DOM."""
+    if result is None:
+        print("Error: No response from server.")
+        return
+    if result.get("status") == "error":
+        print(f"Error: {result.get('message', 'Unknown error')}")
+        return
+
+    # Print tabs — action results include tabs; for dom-only calls, fetch separately
+    tabs = result.get("tabs")
+    if tabs is None:
+        tabs_data = _get(base_url, "/api/browser/tabs")
+        if tabs_data:
+            tabs = tabs_data.get("tabs", [])
+    if tabs:
+        print("Tabs:")
+        _print_tabs(tabs)
+
+    # Print DOM
+    dom = result.get("dom", "")
+    if dom:
+        print(f"\nDOM:\n{dom}")
+
 
 def _print_message(msg):
     """Print a single chat message to the terminal."""
@@ -109,7 +171,6 @@ def _print_message(msg):
         return
 
     if mtype == "thinking":
-        # Dim thinking text
         print(f"\033[2m  (thinking) {content.strip()}\033[0m")
     elif mtype == "error":
         print(f"\033[31m  Error: {content}\033[0m")
@@ -310,7 +371,6 @@ def cmd_start(base_url):
         print(".", end="", flush=True)
         if _is_server_running(base_url):
             print(" ready!")
-            port = base_url.rsplit(":", 1)[-1]
             print(f"\n  Server:    {base_url}")
             print(f"  Dashboard: {base_url}")
             print(f"\n  Now you can run:")
@@ -339,8 +399,7 @@ def cmd_start(base_url):
 
 def cmd_run(base_url, task):
     """Send a message to the chat agent and stream responses."""
-    if not _is_server_running(base_url):
-        _exit_no_server(base_url)
+    _require_server(base_url)
 
     # Reset session for a clean run
     _post(base_url, "/api/chat/reset")
@@ -393,8 +452,7 @@ def cmd_run(base_url, task):
 
 def cmd_status(base_url):
     """Show current chat session status."""
-    if not _is_server_running(base_url):
-        _exit_no_server(base_url)
+    _require_server(base_url)
 
     data = _get(base_url, "/api/chat/status?since=0")
     if data is None:
@@ -427,24 +485,157 @@ def cmd_status(base_url):
 
 
 def cmd_stop(base_url):
-    """Stop the chat agent."""
+    """Stop the server."""
     if not _is_server_running(base_url):
-        _exit_no_server(base_url)
+        print("Server is not running.")
+        return
 
-    result = _post(base_url, "/api/chat/stop")
-    if not result:
-        print("Error: Cannot connect.")
-        sys.exit(1)
-    status = result.get("status", "")
-    if status == "stopped":
-        print("Stopped.")
-    else:
+    result = _post(base_url, "/api/server/shutdown")
+    if result and result.get("status") == "shutting_down":
+        print("Server shutting down.")
+    elif result:
         print(f"Response: {result}")
+    else:
+        print("Server stopped.")
+
+
+# ── Browser commands ─────────────────────────────────────────────────
+
+def cmd_browser(base_url, action):
+    """Browser lifecycle: open / close / status."""
+    _require_server(base_url)
+
+    if action == "open":
+        result = _post(base_url, "/api/browser/open")
+        _print_browser_result(base_url, result)
+    elif action == "close":
+        result = _post(base_url, "/api/browser/close")
+        if result and result.get("status") == "ok":
+            print("Browser closed.")
+        else:
+            print(f"Response: {result}")
+    elif action == "status":
+        result = _get(base_url, "/api/browser/status")
+        if result:
+            is_open = result.get("is_open", False)
+            print(f"Browser: {'open' if is_open else 'closed'}")
+            if is_open:
+                print(f"URL: {result.get('url', '')}")
+                print(f"Title: {result.get('title', '')}")
+        else:
+            print("Error: Cannot get browser status.")
+    else:
+        print(f"Unknown browser action: {action}")
+        print("Usage: clawome browser open|close|status")
+
+
+def cmd_open(base_url, target_url):
+    """Open a URL in the browser."""
+    _require_server(base_url)
+    result = _post(base_url, "/api/browser/open", {"url": target_url})
+    _print_browser_result(base_url, result)
+
+
+def cmd_search(base_url, engine, query):
+    """Search using a search engine."""
+    _require_server(base_url)
+    search_urls = {
+        "bing": f"https://www.bing.com/search?q={_url_encode(query)}",
+        "baidu": f"https://www.baidu.com/s?wd={_url_encode(query)}",
+        "search": f"https://www.google.com/search?q={_url_encode(query)}",
+    }
+    url = search_urls[engine]
+    result = _post(base_url, "/api/browser/open", {"url": url})
+    _print_browser_result(base_url, result)
+
+
+def cmd_click(base_url, node_id):
+    """Click an element by node_id."""
+    _require_server(base_url)
+    result = _post(base_url, "/api/browser/click", {"node_id": node_id})
+    _print_browser_result(base_url, result)
+
+
+def cmd_type(base_url, node_id, text):
+    """Type text into an element by node_id."""
+    _require_server(base_url)
+    result = _post(base_url, "/api/browser/input", {"node_id": node_id, "text": text})
+    _print_browser_result(base_url, result)
+
+
+def cmd_scroll(base_url, direction):
+    """Scroll the page up or down."""
+    _require_server(base_url)
+    if direction == "up":
+        result = _post(base_url, "/api/browser/scroll/up")
+    else:
+        result = _post(base_url, "/api/browser/scroll/down")
+    _print_browser_result(base_url, result)
+
+
+def cmd_back(base_url):
+    """Navigate back."""
+    _require_server(base_url)
+    result = _post(base_url, "/api/browser/back")
+    _print_browser_result(base_url, result)
+
+
+def cmd_refresh(base_url):
+    """Refresh the current page."""
+    _require_server(base_url)
+    result = _post(base_url, "/api/browser/refresh")
+    _print_browser_result(base_url, result)
+
+
+def cmd_dom(base_url):
+    """Show current page DOM and tabs."""
+    _require_server(base_url)
+    result = _get(base_url, "/api/browser/dom")
+    _print_browser_result(base_url, result)
+
+
+def cmd_text(base_url, node_id):
+    """Get text content of an element."""
+    _require_server(base_url)
+    result = _post(base_url, "/api/browser/text", {"node_id": node_id})
+    if result and result.get("status") == "ok":
+        print(result.get("text", ""))
+    elif result:
+        print(f"Error: {result.get('message', 'Unknown error')}")
+    else:
+        print("Error: No response from server.")
+
+
+def cmd_tabs(base_url):
+    """List all open browser tabs."""
+    _require_server(base_url)
+    result = _get(base_url, "/api/browser/tabs")
+    if result and result.get("tabs"):
+        _print_tabs(result["tabs"])
+    elif result and result.get("status") == "error":
+        print(f"Error: {result.get('message', '')}")
+    else:
+        print("  (no tabs open)")
+
+
+def cmd_tab(base_url, tab_id):
+    """Switch to a specific tab."""
+    _require_server(base_url)
+    result = _post(base_url, "/api/browser/tabs/switch", {"tab_id": tab_id})
+    _print_browser_result(base_url, result)
 
 
 # ── Entry point ──────────────────────────────────────────────────────
 
-KNOWN_COMMANDS = {"start", "setup", "run", "status", "stop", "--help", "-h", "--url"}
+KNOWN_COMMANDS = {
+    "start", "setup", "run", "status", "stop", "help",
+    "browser",
+    "bing", "baidu", "search",
+    "open", "back", "refresh",
+    "click", "type", "scroll",
+    "dom", "text", "tabs", "tab",
+    "--help", "-h", "--url",
+}
 
 
 def main():
@@ -465,11 +656,22 @@ def main():
     parser = argparse.ArgumentParser(
         prog="clawome",
         description="Clawome CLI — run web tasks from the terminal",
-        epilog="Examples:\n"
-               "  clawome start                     Start server with guided setup\n"
-               '  clawome "find AI news on HN"      Submit a task\n'
-               "  clawome status                    Check progress\n"
-               "  clawome stop                      Cancel task",
+        epilog=(
+            "Examples:\n"
+            "  clawome start                     Start server with guided setup\n"
+            '  clawome "find AI news on HN"      Submit a task\n'
+            "  clawome status                    Check progress\n"
+            "  clawome stop                      Stop the server\n"
+            "\n"
+            "Browser:\n"
+            '  clawome open "https://example.com"  Open URL\n'
+            '  clawome bing "machine learning"     Search Bing\n'
+            "  clawome click 5                     Click element [5]\n"
+            '  clawome type 3 "hello"              Type into element [3]\n'
+            "  clawome scroll down                 Scroll down\n"
+            "  clawome dom                         Show DOM\n"
+            "  clawome tabs                        List tabs\n"
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -479,24 +681,61 @@ def main():
 
     sub = parser.add_subparsers(dest="command")
 
-    # clawome start
+    # ── Server management ──
     sub.add_parser("start", help="Start server with guided setup")
-
-    # clawome setup
     sub.add_parser("setup", help="Configure LLM settings")
+    sub.add_parser("stop", help="Stop the server")
+    sub.add_parser("status", help="Show chat session status")
+    sub.add_parser("help", help="Show this help message")
 
-    # clawome run "task"
-    run_p = sub.add_parser("run", help="Send a task to the agent")
+    # ── Chat agent ──
+    run_p = sub.add_parser("run", help="Send a task to the chat agent")
     run_p.add_argument("task", help="Task description in natural language")
 
-    # clawome status
-    sub.add_parser("status", help="Show current task status")
+    # ── Browser lifecycle ──
+    browser_p = sub.add_parser("browser", help="Browser lifecycle (open/close/status)")
+    browser_p.add_argument("action", choices=["open", "close", "status"],
+                           help="open, close, or status")
 
-    # clawome stop
-    sub.add_parser("stop", help="Cancel running task")
+    # ── Search engines ──
+    for engine, engine_help in [("bing", "Search via Bing"),
+                                 ("baidu", "Search via Baidu"),
+                                 ("search", "Search via Google")]:
+        p = sub.add_parser(engine, help=engine_help)
+        p.add_argument("query", help="Search query")
+
+    # ── Navigation ──
+    open_p = sub.add_parser("open", help="Open a URL in the browser")
+    open_p.add_argument("target_url", help="URL to open")
+    sub.add_parser("back", help="Navigate back")
+    sub.add_parser("refresh", help="Refresh the current page")
+
+    # ── Interaction ──
+    click_p = sub.add_parser("click", help="Click an element")
+    click_p.add_argument("node_id", help="Node ID to click")
+
+    type_p = sub.add_parser("type", help="Type text into an element")
+    type_p.add_argument("node_id", help="Node ID to type into")
+    type_p.add_argument("text", help="Text to type")
+
+    scroll_p = sub.add_parser("scroll", help="Scroll the page")
+    scroll_p.add_argument("direction", nargs="?", default="down",
+                          choices=["up", "down"], help="Direction (default: down)")
+
+    # ── Reading ──
+    sub.add_parser("dom", help="Show current page DOM and tabs")
+
+    text_p = sub.add_parser("text", help="Get text content of an element")
+    text_p.add_argument("node_id", help="Node ID to get text from")
+
+    sub.add_parser("tabs", help="List all open browser tabs")
+
+    tab_p = sub.add_parser("tab", help="Switch to a specific tab")
+    tab_p.add_argument("tab_id", type=int, help="Tab ID to switch to")
 
     args = parser.parse_args(argv)
 
+    # Dispatch
     if args.command == "start":
         cmd_start(args.url)
     elif args.command == "setup":
@@ -507,6 +746,32 @@ def main():
         cmd_status(args.url)
     elif args.command == "stop":
         cmd_stop(args.url)
+    elif args.command == "help":
+        parser.print_help()
+    elif args.command == "browser":
+        cmd_browser(args.url, args.action)
+    elif args.command in ("bing", "baidu", "search"):
+        cmd_search(args.url, args.command, args.query)
+    elif args.command == "open":
+        cmd_open(args.url, args.target_url)
+    elif args.command == "back":
+        cmd_back(args.url)
+    elif args.command == "refresh":
+        cmd_refresh(args.url)
+    elif args.command == "click":
+        cmd_click(args.url, args.node_id)
+    elif args.command == "type":
+        cmd_type(args.url, args.node_id, args.text)
+    elif args.command == "scroll":
+        cmd_scroll(args.url, args.direction)
+    elif args.command == "dom":
+        cmd_dom(args.url)
+    elif args.command == "text":
+        cmd_text(args.url, args.node_id)
+    elif args.command == "tabs":
+        cmd_tabs(args.url)
+    elif args.command == "tab":
+        cmd_tab(args.url, args.tab_id)
     else:
         parser.print_help()
 
