@@ -514,10 +514,18 @@ class BrowserManager:
                     chrome_args.append(f"--window-position={win_x},{win_y}")
                 if win_w > 0 and win_h > 0:
                     chrome_args.append(f"--window-size={win_w},{win_h}")
-                self._browser = self._playwright.chromium.launch(
-                    headless=cfg.get("headless"), channel="chrome",
-                    args=chrome_args,
-                )
+                is_opened = False
+                for channel in ["chrome","msedge",None]:
+                    try:
+                        self._browser = self._playwright.chromium.launch(
+                            headless=cfg.get("headless"), channel=channel,
+                            args=chrome_args,
+                        )
+                        is_opened = True
+                        break
+                    except Exception as e:
+                        pass
+                assert is_opened, "Failed to launch browser with any channel"
                 self._context = self._browser.new_context(accept_downloads=True)
                 # Inject addEventListener interceptor BEFORE any page scripts.
                 # Captures every element that receives a click/mousedown/pointerdown
@@ -1226,10 +1234,18 @@ class BrowserManager:
         if pw is None:
             pw = sync_playwright().start()
             own_pw = pw
-        browser = pw.chromium.launch(
-            headless=cfg.get("headless"), channel="chrome",
-            args=["--no-sandbox", "--disable-dev-shm-usage"],
-        )
+        is_opened = False
+        for channel in ["chrome","msedge",None]:
+            try:
+                browser = pw.chromium.launch(
+                    headless=cfg.get("headless"), channel=channel,
+                    args=["--no-sandbox", "--disable-dev-shm-usage"],
+                )
+                is_opened = True
+                break
+            except Exception as e:
+                pass
+        assert is_opened, "Failed to launch browser with any channel"
         context = browser.new_context()
         page = context.new_page()
         return own_pw, browser, page
